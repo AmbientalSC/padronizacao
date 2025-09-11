@@ -1,0 +1,5 @@
+{
+  "name": "Gerador de Descrições de Atendimento",
+  "description": "Uma ferramenta interna de produtividade para padronizar os textos de registro de atendimentos, baseando-se em modelos pré-definidos e gerando textos formatados em tempo real.",
+  "requestFramePermissions": []
+}
