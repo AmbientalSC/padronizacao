@@ -33,7 +33,16 @@ const Generator: React.FC<GeneratorProps> = ({ templates, atendimentos, setAtend
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
     const isCheckbox = type === 'checkbox';
-    const finalValue = isCheckbox ? (e.target as HTMLInputElement).checked : value;
+    let finalValue = isCheckbox ? (e.target as HTMLInputElement).checked : value;
+    
+    // Formatação especial para campos de data - converter para DD/MM/AAAA
+    if (type === 'date' && value) {
+      const dateObj = new Date(value);
+      if (!isNaN(dateObj.getTime())) {
+        finalValue = dateObj.toLocaleDateString('pt-BR');
+      }
+    }
+    
     setFormData(prev => ({ ...prev, [name]: finalValue }));
   };
 

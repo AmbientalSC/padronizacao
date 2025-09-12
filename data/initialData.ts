@@ -50,5 +50,15 @@ export const initialTemplates: Template[] = [
         "text": " CARNE ENVIADO VIA E-MAIL: {{email_cliente}} TICKET: {{ticket}}"
       }
     }
+  },
+  {
+    "id": 2,
+    "title": "2. ATENDIMENTO COM DATA - TESTE FORMATO",
+    "template": "Em {{data_atendimento}}, o SR. {{nome_cliente}} compareceu para solicitar informações sobre o serviço. Atendimento realizado com sucesso.",
+    "fields": [
+      { "name": "data_atendimento", "label": "Data do Atendimento", "type": "date" },
+      { "name": "nome_cliente", "label": "Nome do Cliente", "type": "text" }
+    ],
+    "template_logic": {}
   }
 ];
