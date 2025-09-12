@@ -1,19 +1,16 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Template, TemplateField, Atendimento } from '../types';
+import { Template, TemplateField } from '../types';
 import { ClipboardIcon, CheckIcon } from './icons/ClipboardIcon';
 
 interface GeneratorProps {
   templates: Template[];
-  atendimentos: Atendimento[];
-  setAtendimentos: React.Dispatch<React.SetStateAction<Atendimento[]>>;
 }
 
-const Generator: React.FC<GeneratorProps> = ({ templates, atendimentos, setAtendimentos }) => {
+const Generator: React.FC<GeneratorProps> = ({ templates }) => {
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
   const [formData, setFormData] = useState<{ [key: string]: any }>({});
   const [isCopied, setIsCopied] = useState(false);
-  const [showSavedToast, setShowSavedToast] = useState(false);
 
   const selectedTemplate = useMemo(() => {
     if (!selectedTemplateId) return null;
@@ -73,33 +70,6 @@ const Generator: React.FC<GeneratorProps> = ({ templates, atendimentos, setAtend
     });
   };
 
-  const handleProximoAtendimento = () => {
-    if (!selectedTemplate || !generatedText.trim()) {
-      alert('Por favor, preencha o formulário antes de salvar o atendimento.');
-      return;
-    }
-
-    const novoAtendimento: Atendimento = {
-      id: Date.now(),
-      templateId: selectedTemplate.id,
-      templateTitle: selectedTemplate.title,
-      formData: { ...formData },
-      generatedText: generatedText,
-      createdAt: new Date().toISOString()
-    };
-
-    setAtendimentos(prev => [...prev, novoAtendimento]);
-    
-    // Reset form
-    setSelectedTemplateId('');
-    setFormData({});
-    setIsCopied(false);
-
-    // Show toast
-    setShowSavedToast(true);
-    setTimeout(() => setShowSavedToast(false), 3000);
-  };
-
   const renderField = useCallback((field: TemplateField) => {
     if (field.condition) {
         const conditionField = field.condition.field;
@@ -142,16 +112,6 @@ const Generator: React.FC<GeneratorProps> = ({ templates, atendimentos, setAtend
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
-      {/* Toast de confirmação */}
-      {showSavedToast && (
-        <div className="fixed top-4 right-4 z-50 flex items-center px-4 py-3 bg-green-600 text-white rounded-lg shadow-lg transform transition-all duration-300 ease-in-out">
-          <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-          </svg>
-          <span className="font-medium">Atendimento salvo com sucesso!</span>
-        </div>
-      )}
-      
       <div className="max-w-7xl mx-auto">
         <div className="mb-6">
           <label htmlFor="template-select" className="block text-sm font-medium text-gray-700 mb-1">Selecione o Modelo de Atendimento</label>
@@ -177,36 +137,23 @@ const Generator: React.FC<GeneratorProps> = ({ templates, atendimentos, setAtend
               </form>
             </div>
             <div className="bg-white p-6 rounded-lg shadow-md">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold text-gray-800">Preview em Tempo Real</h2>
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">Preview em Tempo Real</h2>
+              <div className="relative">
+                <textarea
+                  readOnly
+                  value={generatedText}
+                  className="w-full h-96 p-3 bg-gray-50 border border-gray-300 rounded-md shadow-inner text-sm font-mono"
+                  placeholder="O texto gerado aparecerá aqui..."
+                />
                 <button
                   onClick={handleCopyToClipboard}
-                  className="flex items-center justify-center px-3 py-1.5 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-150"
+                  className="absolute top-2 right-2 flex items-center justify-center px-3 py-1.5 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-150"
                   disabled={!generatedText}
                 >
                   {isCopied ? <CheckIcon className="h-5 w-5 mr-1" /> : <ClipboardIcon className="h-5 w-5 mr-1" />}
                   {isCopied ? 'Copiado!' : 'Copiar'}
                 </button>
               </div>
-              <textarea
-                readOnly
-                value={generatedText}
-                className="w-full h-96 p-3 bg-gray-50 border border-gray-300 rounded-md shadow-inner text-sm font-mono"
-                placeholder="O texto gerado aparecerá aqui..."
-              />
-              {generatedText && (
-                <div className="mt-4">
-                  <button
-                    onClick={handleProximoAtendimento}
-                    className="w-full flex items-center justify-center px-4 py-3 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-150"
-                  >
-                    <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                    </svg>
-                    Próximo Atendimento
-                  </button>
-                </div>
-              )}
             </div>
           </div>
         )}

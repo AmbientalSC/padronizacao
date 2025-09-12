@@ -1,132 +1,20 @@
-# Gerador de Descrições de Atendimento
+<div align="center">
+<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+</div>
 
-Uma ferramenta interna de produtividade para padronizar os textos de registro de atendimentos, baseando-se em modelos pré-definidos e gerando textos formatados em tempo real.
+# Run and deploy your AI Studio app
 
-## 🚀 Funcionalidades
+This contains everything you need to run your app locally.
 
-- **Gerador de Textos**: Interface para criar descrições padronizadas de atendimento
-- **Histórico de Atendimentos**: Visualização e edição de atendimentos salvos
-- **Gerenciamento de Modelos**: CRUD completo para templates (requer login)
-- **Autenticação Firebase**: Sistema de login para administradores
-- **Armazenamento Híbrido**: localStorage local + Firebase para templates
-- **Interface Responsiva**: Design moderno com Tailwind CSS
+View your app in AI Studio: https://ai.studio/apps/drive/19ILClhlc3hQX3jl1a1LK9qUKwM7dporQ
 
-## 🛠️ Tecnologias
+## Run Locally
 
-- **Frontend**: React 19.1.1 + TypeScript
-- **Build**: Vite 6.2.0
-- **Styling**: Tailwind CSS
-- **Backend**: Firebase (Auth + Firestore)
-- **Deploy**: GitHub Pages
+**Prerequisites:**  Node.js
 
-## 🏃‍♂️ Executando Localmente
 
-### Pré-requisitos
-- Node.js 18+
-- npm
-
-### Instalação
-
-1. Clone o repositório:
-   ```bash
-   git clone https://github.com/AmbientalSC/padronizacao.git
-   cd padronizacao
-   ```
-
-2. Instale as dependências:
-   ```bash
-   npm install
-   ```
-
-3. Configure as variáveis de ambiente:
-   ```bash
-   # Crie um arquivo .env.local
-   GEMINI_API_KEY=sua_chave_api_aqui
-   ```
-
-4. Execute o projeto:
-   ```bash
-   npm run dev
-   ```
-
-5. Acesse: `http://localhost:5173`
-
-## 🚀 Deploy
-
-### Deploy Manual
-```bash
-npm run build
-npm run deploy
-```
-
-### Deploy Automático
-O projeto está configurado com GitHub Actions para deploy automático:
-- Push na branch `main` → Deploy automático
-- URL: https://ambientalsc.github.io/padronizacao
-
-## 🔧 Configuração do Firebase
-
-1. Crie um projeto no [Firebase Console](https://console.firebase.google.com)
-2. Ative Authentication (Email/Password)
-3. Ative Firestore Database
-4. Configure as regras de segurança do Firestore:
-
-```javascript
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /templates/{document} {
-      allow read: if true;
-      allow write: if request.auth != null;
-    }
-  }
-}
-```
-
-5. Adicione a configuração no arquivo `firebase/config.ts`
-
-## 👥 Como Usar
-
-### Para Usuários (Sem Login)
-1. **Gerador**: Selecione um modelo e preencha o formulário
-2. **Atendimentos**: Visualize e edite seu histórico local
-
-### Para Administradores (Com Login)
-1. Clique em "Gerenciar Modelos"
-2. Faça login com credenciais de administrador
-3. Crie, edite ou exclua modelos de atendimento
-4. Os modelos ficam sincronizados na nuvem
-
-## 📁 Estrutura do Projeto
-
-```
-src/
-├── components/          # Componentes React
-│   ├── Generator.tsx    # Interface principal
-│   ├── Manager.tsx      # Gerenciador de modelos
-│   ├── Atendimentos.tsx # Histórico
-│   ├── LoginModal.tsx   # Modal de login
-│   └── ConfirmModal.tsx # Modal de confirmação
-├── hooks/               # Hooks customizados
-│   ├── useAuth.ts       # Autenticação
-│   ├── useLocalStorage.ts
-│   └── useFirebaseTemplates.ts
-├── firebase/            # Configuração Firebase
-├── data/               # Dados iniciais
-└── types.ts            # Tipos TypeScript
-```
-
-## 🔐 Segurança
-
-- Templates protegidos por autenticação
-- Regras de segurança do Firestore
-- Armazenamento local para dados pessoais
-- Validação de formulários
-
-## 📝 Licença
-
-© 2025 Ambiental Limpeza Urbana e Saneamento LTDA. Todos os direitos reservados.
-
----
-
-**URL de Produção**: https://ambientalsc.github.io/padronizacao
+1. Install dependencies:
+   `npm install`
+2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
+3. Run the app:
+   `npm run dev`

@@ -1,12 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Template, TemplateField, TemplateLogicItem, FieldCondition } from '../types';
-import ConfirmModal from './ConfirmModal';
 
 interface ManagerProps {
   templates: Template[];
-  addTemplate: (template: Omit<Template, 'id'>) => Promise<{ success: boolean; error?: any }>;
-  updateTemplate: (templateId: string | number, updatedData: Partial<Template>) => Promise<{ success: boolean; error?: any }>;
-  deleteTemplate: (templateId: string | number) => Promise<{ success: boolean; error?: any }>;
+  setTemplates: React.Dispatch<React.SetStateAction<Template[]>>;
 }
 
 const emptyTemplate: Omit<Template, 'id'> = {
@@ -16,19 +13,8 @@ const emptyTemplate: Omit<Template, 'id'> = {
   template_logic: {}
 };
 
-const Manager: React.FC<ManagerProps> = ({ templates, addTemplate, updateTemplate, deleteTemplate }) => {
+const Manager: React.FC<ManagerProps> = ({ templates, setTemplates }) => {
   const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
-  const [confirmModal, setConfirmModal] = useState<{
-    isOpen: boolean;
-    title: string;
-    message: string;
-    onConfirm: () => void;
-  }>({
-    isOpen: false,
-    title: '',
-    message: '',
-    onConfirm: () => {}
-  });
 
   const handleCreateNew = () => {
     setEditingTemplate({ ...emptyTemplate, id: Date.now(), template_logic: {} });
@@ -42,48 +28,27 @@ const Manager: React.FC<ManagerProps> = ({ templates, addTemplate, updateTemplat
     setEditingTemplate(null);
   };
 
-  const handleDelete = async (id: number) => {
-    setConfirmModal({
-      isOpen: true,
-      title: 'Excluir Modelo',
-      message: 'Tem certeza que deseja excluir este modelo? Esta ação não pode ser desfeita e o modelo será removido permanentemente.',
-      onConfirm: async () => {
-        const result = await deleteTemplate(id);
-        if (result.success) {
-          if (editingTemplate?.id === id) {
-            setEditingTemplate(null);
-          }
-        } else {
-          alert('Erro ao excluir template. Tente novamente.');
-        }
-        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+  const handleDelete = (id: number) => {
+    if (window.confirm('Tem certeza que deseja excluir este modelo?')) {
+      setTemplates(prev => prev.filter(t => t.id !== id));
+      if (editingTemplate?.id === id) {
+          setEditingTemplate(null);
       }
-    });
+    }
   };
 
-  const handleSave = async () => {
+  const handleSave = () => {
     if (!editingTemplate || !editingTemplate.title) {
         alert("O título do modelo é obrigatório.");
         return;
     }
-    
-    const isNewTemplate = editingTemplate.id > 10000; // IDs grandes são novos templates
-    
-    if (isNewTemplate) {
-      const { id, ...templateData } = editingTemplate;
-      const result = await addTemplate(templateData);
-      if (!result.success) {
-        alert('Erro ao criar template. Tente novamente.');
-        return;
-      }
-    } else {
-      const result = await updateTemplate(editingTemplate.id, editingTemplate);
-      if (!result.success) {
-        alert('Erro ao atualizar template. Tente novamente.');
-        return;
-      }
-    }
-    
+    setTemplates(prev => {
+        const exists = prev.some(t => t.id === editingTemplate.id);
+        if (exists) {
+            return prev.map(t => t.id === editingTemplate.id ? editingTemplate : t);
+        }
+        return [...prev, editingTemplate];
+    });
     setEditingTemplate(null);
   };
 
@@ -327,10 +292,10 @@ const Manager: React.FC<ManagerProps> = ({ templates, addTemplate, updateTemplat
                                        </div>
                                        <div className="md:col-span-2">
                                            <label className="block text-xs font-medium text-gray-600">Texto a ser Inserido</label>
-                                           <textarea value={(item as TemplateLogicItem).text} onChange={e => handleTemplateLogicChange(key, key, {text: e.target.value})} className="mt-1 block w-full px-2 py-1 text-sm border-gray-300 rounded-md font-mono" rows={3}></textarea>
+                                           <textarea value={item.text} onChange={e => handleTemplateLogicChange(key, key, {text: e.target.value})} className="mt-1 block w-full px-2 py-1 text-sm border-gray-300 rounded-md font-mono" rows={3}></textarea>
                                        </div>
                                    </div>
-                                   {renderConditionUI((item as TemplateLogicItem).condition, (data) => handleTemplateLogicChange(key, key, {condition: data || {field: '', value: ''}}), allFieldsForLogic, `logic-${key}`)}
+                                   {renderConditionUI(item.condition, (data) => handleTemplateLogicChange(key, key, {condition: data || {field: '', value: ''}}), allFieldsForLogic, `logic-${key}`)}
                                </div>
                            ))}
                            <button onClick={handleAddTemplateLogic} className="text-sm text-green-600 hover:text-green-800">+ Adicionar bloco de texto condicional</button>
@@ -375,17 +340,6 @@ const Manager: React.FC<ManagerProps> = ({ templates, addTemplate, updateTemplat
             )}
           </ul>
         </div>
-        
-        <ConfirmModal
-          isOpen={confirmModal.isOpen}
-          title={confirmModal.title}
-          message={confirmModal.message}
-          confirmText="Excluir"
-          cancelText="Cancelar"
-          onConfirm={confirmModal.onConfirm}
-          onCancel={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
-          variant="danger"
-        />
       </div>
     </div>
   );

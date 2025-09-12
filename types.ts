@@ -24,12 +24,3 @@ export interface Template {
   fields: TemplateField[];
   template_logic?: { [key: string]: TemplateLogicItem };
 }
-
-export interface Atendimento {
-  id: number;
-  templateId: number;
-  templateTitle: string;
-  formData: { [key: string]: any };
-  generatedText: string;
-  createdAt: string;
-}
