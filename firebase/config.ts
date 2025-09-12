@@ -23,10 +23,14 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 
-// Initialize Analytics (optional)
-let analytics;
-if (typeof window !== 'undefined') {
-  analytics = getAnalytics(app);
+// Initialize Analytics only in browser environment and catch errors
+let analytics = null;
+try {
+  if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+    analytics = getAnalytics(app);
+  }
+} catch (error) {
+  console.warn('Analytics não pôde ser inicializado:', error);
 }
 
 export { analytics };
