@@ -15,11 +15,22 @@ const Generator: React.FC<GeneratorProps> = ({ templates, atendimentos, setAtend
   const [isCopied, setIsCopied] = useState(false);
   const [showSavedToast, setShowSavedToast] = useState(false);
   const [showNotesModal, setShowNotesModal] = useState(false);
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const selectedTemplate = useMemo(() => {
     if (!selectedTemplateId) return null;
     return templates.find(t => t.id.toString() === selectedTemplateId) || null;
   }, [selectedTemplateId, templates]);
+
+  // Templates filtrados e ordenados
+  const filteredAndSortedTemplates = useMemo(() => {
+    return templates
+      .filter(template => 
+        template.title.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+      .sort((a, b) => a.title.localeCompare(b.title, 'pt-BR'));
+  }, [templates, searchTerm]);
 
   useEffect(() => {
     const defaultFormData: { [key: string]: any } = {};
@@ -30,6 +41,22 @@ const Generator: React.FC<GeneratorProps> = ({ templates, atendimentos, setAtend
     }
     setFormData(defaultFormData);
   }, [selectedTemplate]);
+
+  // Fechar dropdown ao clicar fora
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      const dropdown = target.closest('.template-select-container');
+      if (!dropdown) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    if (isDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [isDropdownOpen]);
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
@@ -166,18 +193,63 @@ const Generator: React.FC<GeneratorProps> = ({ templates, atendimentos, setAtend
           <div className="mb-6">
           <label htmlFor="template-select" className="block text-sm font-medium text-gray-700 mb-1">Selecione o Modelo de Atendimento</label>
           <div className="flex items-center space-x-2">
-            <select
-              id="template-select"
-              value={selectedTemplateId}
-              onChange={(e) => setSelectedTemplateId(e.target.value)}
-              className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm rounded-md"
-            >
-              <option value="">-- Escolha um modelo --</option>
-              {templates.map(template => (
-                <option key={template.id.toString()} value={template.id.toString()}>{template.title}</option>
-              ))}
-            </select>
-            <button title="Ver anotações e FAQ" onClick={() => setShowNotesModal(true)} disabled={!selectedTemplate} className="mt-1 p-2 rounded-md bg-gray-100 hover:bg-gray-200">
+            <div className="relative w-full template-select-container">
+              <input
+                type="text"
+                placeholder={selectedTemplate ? selectedTemplate.title : "Digite para buscar um modelo..."}
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setIsDropdownOpen(true);
+                }}
+                onFocus={() => setIsDropdownOpen(true)}
+                className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm rounded-md"
+              />
+              <button
+                type="button"
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                className="absolute inset-y-0 right-0 flex items-center pr-3 mt-1"
+              >
+                <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              
+              {/* Dropdown */}
+              {isDropdownOpen && (
+                <div className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
+                  {filteredAndSortedTemplates.length > 0 ? (
+                    filteredAndSortedTemplates.map(template => (
+                      <div
+                        key={template.id.toString()}
+                        className={`cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-green-50 ${
+                          selectedTemplateId === template.id.toString() ? 'bg-green-100 text-green-900' : 'text-gray-900'
+                        }`}
+                        onClick={() => {
+                          setSelectedTemplateId(template.id.toString());
+                          setSearchTerm('');
+                          setIsDropdownOpen(false);
+                        }}
+                      >
+                        <span className="block truncate">{template.title}</span>
+                        {selectedTemplateId === template.id.toString() && (
+                          <span className="absolute inset-y-0 right-0 flex items-center pr-4 text-green-600">
+                            <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                          </span>
+                        )}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="py-2 pl-3 pr-9 text-gray-500">
+                      Nenhum modelo encontrado
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+            <button title="Ver anotações e FAQ" onClick={() => setShowNotesModal(true)} disabled={!selectedTemplate} className="mt-1 p-2 rounded-md bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed">
               <svg className="h-5 w-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M12 20a8 8 0 100-16 8 8 0 000 16z" />
               </svg>

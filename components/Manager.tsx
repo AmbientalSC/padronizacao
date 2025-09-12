@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Template, TemplateField, TemplateLogicItem, FieldCondition } from '../types';
 import ConfirmModal from './ConfirmModal';
 
@@ -31,6 +31,11 @@ const Manager: React.FC<ManagerProps> = ({ templates, addTemplate, updateTemplat
   });
 
   const [activeTab, setActiveTab] = useState<'content' | 'notes'>('content');
+
+  // Templates ordenados alfabeticamente
+  const sortedTemplates = useMemo(() => {
+    return [...templates].sort((a, b) => a.title.localeCompare(b.title, 'pt-BR'));
+  }, [templates]);
 
   const handleCreateNew = () => {
   // Use negative timestamp for local-only new templates to avoid colliding with Firestore positive ids
@@ -404,7 +409,7 @@ const Manager: React.FC<ManagerProps> = ({ templates, addTemplate, updateTemplat
 
         <div className="bg-white shadow-md rounded-lg overflow-hidden">
           <ul className="divide-y divide-gray-200">
-            {templates.length > 0 ? templates.map(template => (
+            {sortedTemplates.length > 0 ? sortedTemplates.map(template => (
               <li key={template.id.toString()} className="px-6 py-4 flex items-center justify-between hover:bg-gray-50">
                 <p className="text-sm font-medium text-gray-900 truncate">{template.title}</p>
                 <div className="flex-shrink-0 ml-4 space-x-2">
