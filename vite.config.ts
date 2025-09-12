@@ -1,11 +1,11 @@
 import path from 'path';
 import { defineConfig, loadEnv } from 'vite';
 
-export default defineConfig(({ mode }) => {
+export default defineConfig(({ mode, command }) => {
     const env = loadEnv(mode, '.', '');
     
-    // Para GitHub Pages, o base path será /padronizacao/
-    const base = mode === 'production' ? '/padronizacao/' : '/';
+    // Para GitHub Pages, sempre usar o base path /padronizacao/ no build
+    const base = command === 'build' ? '/padronizacao/' : '/';
     
     return {
       base,
@@ -21,7 +21,13 @@ export default defineConfig(({ mode }) => {
       build: {
         outDir: 'dist',
         assetsDir: 'assets',
-        sourcemap: false
+        sourcemap: false,
+        // Garantir que os assets sejam referenciados corretamente
+        rollupOptions: {
+          output: {
+            assetFileNames: 'assets/[name].[hash].[ext]'
+          }
+        }
       }
     };
 });
