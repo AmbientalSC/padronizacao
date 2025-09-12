@@ -5,8 +5,8 @@ export default defineConfig(({ mode, command }) => {
     const env = loadEnv(mode, '.', '');
     
     // Para desenvolvimento: sempre usar /
-    // Para build: usar /padronizacao/ se for para GitHub Pages
-    const base = command === 'build' && process.env.GITHUB_ACTIONS ? '/padronizacao/' : '/';
+    // Para build: usar /padronizacao/ para GitHub Pages
+    const base = command === 'build' ? '/padronizacao/' : '/';
     
     return {
       base,
