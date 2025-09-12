@@ -31,7 +31,8 @@ const Manager: React.FC<ManagerProps> = ({ templates, addTemplate, updateTemplat
   });
 
   const handleCreateNew = () => {
-    setEditingTemplate({ ...emptyTemplate, id: Date.now(), template_logic: {} });
+  // Use negative timestamp for local-only new templates to avoid colliding with Firestore positive ids
+  setEditingTemplate({ ...emptyTemplate, id: -Date.now(), template_logic: {} });
   };
 
   const handleSelectForEdit = (template: Template) => {
@@ -48,7 +49,7 @@ const Manager: React.FC<ManagerProps> = ({ templates, addTemplate, updateTemplat
       title: 'Excluir Modelo',
       message: 'Tem certeza que deseja excluir este modelo? Esta ação não pode ser desfeita e o modelo será removido permanentemente.',
       onConfirm: async () => {
-        const result = await deleteTemplate(id);
+  const result = await deleteTemplate(id);
         if (result.success) {
           if (editingTemplate?.id === id) {
             setEditingTemplate(null);
@@ -66,20 +67,23 @@ const Manager: React.FC<ManagerProps> = ({ templates, addTemplate, updateTemplat
         alert("O título do modelo é obrigatório.");
         return;
     }
-    
-    const isNewTemplate = editingTemplate.id > 10000; // IDs grandes são novos templates
-    
-    if (isNewTemplate) {
+  // Determine se é novo: se o id não existe nos templates carregados
+  const exists = templates.some(t => t.id.toString() === editingTemplate.id.toString());
+  const isNewTemplate = !exists;
+
+  if (isNewTemplate) {
       const { id, ...templateData } = editingTemplate;
       const result = await addTemplate(templateData);
       if (!result.success) {
-        alert('Erro ao criar template. Tente novamente.');
+        console.error('Erro ao criar template:', result.error);
+        alert(`Erro ao criar template: ${result.error?.message || String(result.error) || 'Tente novamente.'}`);
         return;
       }
     } else {
       const result = await updateTemplate(editingTemplate.id, editingTemplate);
       if (!result.success) {
-        alert('Erro ao atualizar template. Tente novamente.');
+        console.error('Erro ao atualizar template:', result.error);
+        alert(`Erro ao atualizar template: ${result.error?.message || String(result.error) || 'Tente novamente.'}`);
         return;
       }
     }
@@ -166,7 +170,12 @@ const Manager: React.FC<ManagerProps> = ({ templates, addTemplate, updateTemplat
       if (!editingTemplate) return;
       setEditingTemplate(prev => {
           if (!prev || !prev.template_logic) return prev;
-          
+      // Se o usuário tentou renomear para uma chave que já existe, bloquear para evitar sobrescrever
+      if (newKey && newKey !== oldKey && prev.template_logic[newKey]) {
+        alert('Já existe um bloco com esse placeholder. Escolha outro nome.');
+        return prev;
+      }
+
           const newLogic = { ...prev.template_logic };
           const item = newLogic[oldKey];
           if (!item) return prev;
@@ -245,7 +254,7 @@ const Manager: React.FC<ManagerProps> = ({ templates, addTemplate, updateTemplat
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center p-4 z-50">
             <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
                 <div className="p-6 sticky top-0 bg-white border-b z-10">
-                    <h2 className="text-2xl font-bold text-gray-800">{editingTemplate.id > 10000 ? 'Criar Novo Modelo' : 'Editar Modelo'}</h2>
+                    <h2 className="text-2xl font-bold text-gray-800">{editingTemplate.id < 0 ? 'Criar Novo Modelo' : 'Editar Modelo'}</h2>
                 </div>
                 <div className="p-6 space-y-6">
                     <div>
@@ -272,10 +281,10 @@ const Manager: React.FC<ManagerProps> = ({ templates, addTemplate, updateTemplat
 
                     <div>
                       <h3 className="text-lg font-semibold text-gray-700 mt-6 border-b pb-2 mb-4">Configuração dos Campos do Formulário</h3>
-                      {editingTemplate.fields.length > 0 ? (
+            {editingTemplate.fields.length > 0 ? (
                           <div className="space-y-6">
-                              {editingTemplate.fields.map((field, index) => (
-                                  <div key={index} className="p-4 border rounded-md bg-gray-50">
+                {editingTemplate.fields.map((field, index) => (
+                  <div key={field.name || index} className="p-4 border rounded-md bg-gray-50">
                                       {/* FIX: Wrapped template literal in a JSX expression to prevent parsing errors. */}
                                       <p className="font-semibold font-mono text-green-700 mb-2">{`\`{{${field.name}}}\``}</p>
                                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -296,10 +305,10 @@ const Manager: React.FC<ManagerProps> = ({ templates, addTemplate, updateTemplat
                                               </select>
                                           </div>
                                           {field.type === 'select' && (
-                                              <div className="md:col-span-2">
-                                                  <label className="block text-xs font-medium text-gray-600">Opções (separadas por vírgula)</label>
-                                                  <input type="text" value={field.options?.join(',') || ''} onChange={e => handleFieldChange(index, { options: e.target.value.split(',').map(s => s.trim()) })} className="mt-1 block w-full px-2 py-1 text-sm border-gray-300 rounded-md"/>
-                                              </div>
+                          <div className="md:col-span-2">
+                              <label className="block text-xs font-medium text-gray-600">Opções (separadas por vírgula)</label>
+                              <input type="text" value={field.options?.join(',') || ''} onChange={e => handleFieldChange(index, { options: e.target.value.split(',').map(s => s.trim()) })} className="mt-1 block w-full px-2 py-1 text-sm border-gray-300 rounded-md"/>
+                            </div>
                                           )}
                                       </div>
                                       {renderConditionUI(field.condition, (data) => handleFieldConditionChange(index, data), otherFields.filter(f => f.name !== field.name), `field-${index}`)}
@@ -321,10 +330,11 @@ const Manager: React.FC<ManagerProps> = ({ templates, addTemplate, updateTemplat
                                       <button onClick={() => handleRemoveTemplateLogic(key)} className="text-xs text-red-500 hover:text-red-700">Remover Bloco</button>
                                   </div>
                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                       <div>
-                                           <label className="block text-xs font-medium text-gray-600">Placeholder a Substituir</label>
-                                           <input type="text" value={key} onBlur={e => handleTemplateLogicChange(key, e.target.value, {})} className="mt-1 block w-full px-2 py-1 text-sm border-gray-300 rounded-md font-mono" placeholder="ex: info_credito"/>
-                                       </div>
+                     <div>
+                       <label className="block text-xs font-medium text-gray-600">Placeholder a Substituir</label>
+                       {/* Use defaultValue + onBlur so input is not a controlled component tied to object key directly */}
+                       <input type="text" defaultValue={key} onBlur={e => handleTemplateLogicChange(key, e.target.value, {})} className="mt-1 block w-full px-2 py-1 text-sm border-gray-300 rounded-md font-mono" placeholder="ex: info_credito"/>
+                     </div>
                                        <div className="md:col-span-2">
                                            <label className="block text-xs font-medium text-gray-600">Texto a ser Inserido</label>
                                            <textarea value={(item as TemplateLogicItem).text} onChange={e => handleTemplateLogicChange(key, key, {text: e.target.value})} className="mt-1 block w-full px-2 py-1 text-sm border-gray-300 rounded-md font-mono" rows={3}></textarea>
@@ -363,7 +373,7 @@ const Manager: React.FC<ManagerProps> = ({ templates, addTemplate, updateTemplat
         <div className="bg-white shadow-md rounded-lg overflow-hidden">
           <ul className="divide-y divide-gray-200">
             {templates.length > 0 ? templates.map(template => (
-              <li key={template.id} className="px-6 py-4 flex items-center justify-between hover:bg-gray-50">
+              <li key={template.id.toString()} className="px-6 py-4 flex items-center justify-between hover:bg-gray-50">
                 <p className="text-sm font-medium text-gray-900 truncate">{template.title}</p>
                 <div className="flex-shrink-0 ml-4 space-x-2">
                   <button onClick={() => handleSelectForEdit(template)} className="text-green-600 hover:text-green-900 text-sm font-medium">Editar</button>

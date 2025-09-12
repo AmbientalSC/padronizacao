@@ -6,6 +6,7 @@ import {
   getDocs, 
   addDoc, 
   updateDoc, 
+  setDoc,
   deleteDoc, 
   onSnapshot 
 } from 'firebase/firestore';
@@ -36,10 +37,15 @@ export const useFirebaseTemplates = (isAuthenticated: boolean) => {
       const firebaseTemplates: Template[] = [];
       snapshot.forEach((doc) => {
         const data = doc.data();
+        // Use sempre o id do documento (doc.id) como identificador para evitar conflitos
+        // com um campo `id` armazenado dentro do documento.
+        // casting to any because Firestore doc.id is string while our Template.id is number in types.
+        // We purposely keep id as the document id string to guarantee uniqueness; comparisons in
+        // the app use toString(), so this is safe at runtime.
         firebaseTemplates.push({ 
           ...data,
-          id: data.id || doc.id 
-        } as Template);
+          id: doc.id as unknown as any
+        } as any);
       });
       
       // Se não houver templates no Firebase, criar os iniciais
@@ -88,7 +94,26 @@ export const useFirebaseTemplates = (isAuthenticated: boolean) => {
     try {
       if (isAuthenticated) {
         const templateRef = doc(db, 'templates', templateId.toString());
-        await updateDoc(templateRef, updatedData);
+
+        // Remove propriedades undefined e a propriedade `id` antes de enviar ao Firestore
+        const deepClean = (obj: any): any => {
+          if (obj === null || typeof obj !== 'object') return obj;
+          if (Array.isArray(obj)) return obj.map(v => deepClean(v));
+          const res: any = {};
+          Object.entries(obj).forEach(([k, v]) => {
+            if (v === undefined) return;
+            res[k] = deepClean(v);
+          });
+          return res;
+        };
+
+        const cleaned = deepClean(updatedData as any);
+        if (cleaned && typeof cleaned === 'object' && 'id' in cleaned) {
+          delete cleaned.id;
+        }
+
+        // Use setDoc with merge para criar/atualizar com mais segurança
+        await setDoc(templateRef, cleaned || {}, { merge: true });
       } else {
         // Fallback para localStorage
         const updatedTemplates = templates.map(t => 
@@ -99,7 +124,7 @@ export const useFirebaseTemplates = (isAuthenticated: boolean) => {
       }
       return { success: true };
     } catch (error) {
-      console.error('Erro ao atualizar template:', error);
+  console.error('Erro ao atualizar template:', error, { templateId, updatedData });
       return { success: false, error };
     }
   };
