@@ -14,6 +14,7 @@ const Generator: React.FC<GeneratorProps> = ({ templates, atendimentos, setAtend
   const [formData, setFormData] = useState<{ [key: string]: any }>({});
   const [isCopied, setIsCopied] = useState(false);
   const [showSavedToast, setShowSavedToast] = useState(false);
+  const [showNotesModal, setShowNotesModal] = useState(false);
 
   const selectedTemplate = useMemo(() => {
     if (!selectedTemplateId) return null;
@@ -162,20 +163,49 @@ const Generator: React.FC<GeneratorProps> = ({ templates, atendimentos, setAtend
       )}
       
       <div className="max-w-7xl mx-auto">
-        <div className="mb-6">
+          <div className="mb-6">
           <label htmlFor="template-select" className="block text-sm font-medium text-gray-700 mb-1">Selecione o Modelo de Atendimento</label>
-          <select
-            id="template-select"
-            value={selectedTemplateId}
-            onChange={(e) => setSelectedTemplateId(e.target.value)}
-            className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm rounded-md"
-          >
-            <option value="">-- Escolha um modelo --</option>
-            {templates.map(template => (
-              <option key={template.id} value={template.id}>{template.title}</option>
-            ))}
-          </select>
+          <div className="flex items-center space-x-2">
+            <select
+              id="template-select"
+              value={selectedTemplateId}
+              onChange={(e) => setSelectedTemplateId(e.target.value)}
+              className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm rounded-md"
+            >
+              <option value="">-- Escolha um modelo --</option>
+              {templates.map(template => (
+                <option key={template.id.toString()} value={template.id.toString()}>{template.title}</option>
+              ))}
+            </select>
+            <button title="Ver anotações e FAQ" onClick={() => setShowNotesModal(true)} disabled={!selectedTemplate} className="mt-1 p-2 rounded-md bg-gray-100 hover:bg-gray-200">
+              <svg className="h-5 w-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M12 20a8 8 0 100-16 8 8 0 000 16z" />
+              </svg>
+            </button>
+          </div>
         </div>
+
+        {/* Notes modal */}
+        {showNotesModal && selectedTemplate && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">Anotações / FAQ — {selectedTemplate.title}</h3>
+                <button onClick={() => setShowNotesModal(false)} className="text-gray-500 hover:text-gray-700">Fechar</button>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <h4 className="text-sm font-medium text-gray-700">Anotações</h4>
+                  <div className="mt-1 p-3 bg-gray-50 rounded border text-sm whitespace-pre-wrap">{selectedTemplate.notes || 'Sem anotações.'}</div>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium text-gray-700">FAQ</h4>
+                  <div className="mt-1 p-3 bg-gray-50 rounded border text-sm whitespace-pre-wrap">{selectedTemplate.faq || 'Sem FAQ.'}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {selectedTemplate && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

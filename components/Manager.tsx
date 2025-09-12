@@ -30,6 +30,8 @@ const Manager: React.FC<ManagerProps> = ({ templates, addTemplate, updateTemplat
     onConfirm: () => {}
   });
 
+  const [activeTab, setActiveTab] = useState<'content' | 'notes'>('content');
+
   const handleCreateNew = () => {
   // Use negative timestamp for local-only new templates to avoid colliding with Firestore positive ids
   setEditingTemplate({ ...emptyTemplate, id: -Date.now(), template_logic: {} });
@@ -256,97 +258,127 @@ const Manager: React.FC<ManagerProps> = ({ templates, addTemplate, updateTemplat
                 <div className="p-6 sticky top-0 bg-white border-b z-10">
                     <h2 className="text-2xl font-bold text-gray-800">{editingTemplate.id < 0 ? 'Criar Novo Modelo' : 'Editar Modelo'}</h2>
                 </div>
-                <div className="p-6 space-y-6">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700">Título do Modelo</label>
-                        <input
-                            type="text"
-                            placeholder="Ex: Atendimento para 2ª via do carnê"
-                            value={editingTemplate.title}
-                            onChange={e => setEditingTemplate(prev => prev ? { ...prev, title: e.target.value } : null)}
-                            className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm"
-                        />
-                    </div>
-                    <div>
-                        {/* FIX: Wrapped string with `{{...}}` in a JSX expression to prevent parsing errors. */}
-                        <label className="block text-sm font-medium text-gray-700">{'Template de Texto (use `{{placeholder}}`)'}</label>
-                        <textarea
-                            rows={6}
-                            placeholder="Ex: O SR. {{nome}} ({{vinculo}}) compareceu para... {{info_credito}}"
-                            value={editingTemplate.template}
-                            onChange={handleTemplateTextChange}
-                            className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm font-mono"
-                        />
-                    </div>
+        <div className="p-6 space-y-6">
+          <div className="flex items-center space-x-4 mb-4">
+            <button onClick={() => setActiveTab('content')} className={`px-3 py-1 text-sm font-medium rounded ${activeTab === 'content' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700'}`}>Conteúdo</button>
+            <button onClick={() => setActiveTab('notes')} className={`px-3 py-1 text-sm font-medium rounded ${activeTab === 'notes' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700'}`}>Anotações</button>
+          </div>
 
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-700 mt-6 border-b pb-2 mb-4">Configuração dos Campos do Formulário</h3>
-            {editingTemplate.fields.length > 0 ? (
-                          <div className="space-y-6">
-                {editingTemplate.fields.map((field, index) => (
-                  <div key={field.name || index} className="p-4 border rounded-md bg-gray-50">
-                                      {/* FIX: Wrapped template literal in a JSX expression to prevent parsing errors. */}
-                                      <p className="font-semibold font-mono text-green-700 mb-2">{`\`{{${field.name}}}\``}</p>
-                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                          <div>
-                                              <label className="block text-xs font-medium text-gray-600">Label do Campo</label>
-                                              <input type="text" value={field.label} onChange={e => handleFieldChange(index, { label: e.target.value })} className="mt-1 block w-full px-2 py-1 text-sm border-gray-300 rounded-md"/>
-                                          </div>
-                                          <div>
-                                              <label className="block text-xs font-medium text-gray-600">Tipo de Campo</label>
-                                              <select value={field.type} onChange={e => handleFieldChange(index, { type: e.target.value as TemplateField['type'] })} className="mt-1 block w-full pl-2 pr-8 py-1 text-sm border-gray-300 rounded-md">
-                                                  <option value="text">Texto</option>
-                                                  <option value="number">Número</option>
-                                                  <option value="date">Data</option>
-                                                  <option value="email">Email</option>
-                                                  <option value="textarea">Área de Texto</option>
-                                                  <option value="select">Seleção</option>
-                                                  <option value="checkbox">Checkbox</option>
-                                              </select>
-                                          </div>
-                                          {field.type === 'select' && (
-                          <div className="md:col-span-2">
+          {activeTab === 'content' ? (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Título do Modelo</label>
+                <input
+                  type="text"
+                  placeholder="Ex: Atendimento para 2ª via do carnê"
+                  value={editingTemplate.title}
+                  onChange={e => setEditingTemplate(prev => prev ? { ...prev, title: e.target.value } : null)}
+                  className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm"
+                />
+              </div>
+
+              {/* FIX: Wrapped string with `{{...}}` in a JSX expression to prevent parsing errors. */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700">{'Template de Texto (use `{{placeholder}}`)'}</label>
+                <textarea
+                  rows={6}
+                  placeholder="Ex: O SR. {{nome}} ({{vinculo}}) compareceu para... {{info_credito}}"
+                  value={editingTemplate.template}
+                  onChange={handleTemplateTextChange}
+                  className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm font-mono"
+                />
+              </div>
+
+              <div>
+                <h3 className="text-lg font-semibold text-gray-700 mt-6 border-b pb-2 mb-4">Configuração dos Campos do Formulário</h3>
+                {editingTemplate.fields.length > 0 ? (
+                  <div className="space-y-6">
+                    {editingTemplate.fields.map((field, index) => (
+                      <div key={field.name || index} className="p-4 border rounded-md bg-gray-50">
+                        <p className="font-semibold font-mono text-green-700 mb-2">{`{{${field.name}}}`}</p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-xs font-medium text-gray-600">Label do Campo</label>
+                            <input type="text" value={field.label} onChange={e => handleFieldChange(index, { label: e.target.value })} className="mt-1 block w-full px-2 py-1 text-sm border-gray-300 rounded-md"/>
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-600">Tipo de Campo</label>
+                            <select value={field.type} onChange={e => handleFieldChange(index, { type: e.target.value as TemplateField['type'] })} className="mt-1 block w-full pl-2 pr-8 py-1 text-sm border-gray-300 rounded-md">
+                              <option value="text">Texto</option>
+                              <option value="number">Número</option>
+                              <option value="date">Data</option>
+                              <option value="email">Email</option>
+                              <option value="textarea">Área de Texto</option>
+                              <option value="select">Seleção</option>
+                              <option value="checkbox">Checkbox</option>
+                            </select>
+                          </div>
+                          {field.type === 'select' && (
+                            <div className="md:col-span-2">
                               <label className="block text-xs font-medium text-gray-600">Opções (separadas por vírgula)</label>
                               <input type="text" value={field.options?.join(',') || ''} onChange={e => handleFieldChange(index, { options: e.target.value.split(',').map(s => s.trim()) })} className="mt-1 block w-full px-2 py-1 text-sm border-gray-300 rounded-md"/>
                             </div>
-                                          )}
-                                      </div>
-                                      {renderConditionUI(field.condition, (data) => handleFieldConditionChange(index, data), otherFields.filter(f => f.name !== field.name), `field-${index}`)}
-                                  </div>
-                              ))}
-                          </div>
-                      ) : (
-                          // FIX: Wrapped string with `{{...}}` in a JSX expression to prevent parsing errors.
-                          <p className="text-sm text-gray-500">{'Nenhum campo de formulário detectado no template. Placeholders como `{{nome}}` se tornarão campos.'}</p>
-                      )}
-                    </div>
-
-                    <div>
-                        <h3 className="text-lg font-semibold text-gray-700 mt-6 border-b pb-2 mb-4">Blocos de Texto Condicionais</h3>
-                        <div className="space-y-4">
-                           {editingTemplate.template_logic && Object.entries(editingTemplate.template_logic).map(([key, item]) => (
-                               <div key={key} className="p-4 border rounded-md bg-blue-50">
-                                  <div className="flex justify-end">
-                                      <button onClick={() => handleRemoveTemplateLogic(key)} className="text-xs text-red-500 hover:text-red-700">Remover Bloco</button>
-                                  </div>
-                                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                     <div>
-                       <label className="block text-xs font-medium text-gray-600">Placeholder a Substituir</label>
-                       {/* Use defaultValue + onBlur so input is not a controlled component tied to object key directly */}
-                       <input type="text" defaultValue={key} onBlur={e => handleTemplateLogicChange(key, e.target.value, {})} className="mt-1 block w-full px-2 py-1 text-sm border-gray-300 rounded-md font-mono" placeholder="ex: info_credito"/>
-                     </div>
-                                       <div className="md:col-span-2">
-                                           <label className="block text-xs font-medium text-gray-600">Texto a ser Inserido</label>
-                                           <textarea value={(item as TemplateLogicItem).text} onChange={e => handleTemplateLogicChange(key, key, {text: e.target.value})} className="mt-1 block w-full px-2 py-1 text-sm border-gray-300 rounded-md font-mono" rows={3}></textarea>
-                                       </div>
-                                   </div>
-                                   {renderConditionUI((item as TemplateLogicItem).condition, (data) => handleTemplateLogicChange(key, key, {condition: data || {field: '', value: ''}}), allFieldsForLogic, `logic-${key}`)}
-                               </div>
-                           ))}
-                           <button onClick={handleAddTemplateLogic} className="text-sm text-green-600 hover:text-green-800">+ Adicionar bloco de texto condicional</button>
+                          )}
                         </div>
+                        {renderConditionUI(field.condition, (data) => handleFieldConditionChange(index, data), otherFields.filter(f => f.name !== field.name), `field-${index}`)}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500">{'Nenhum campo de formulário detectado no template. Placeholders como `{{nome}}` se tornarão campos.'}</p>
+                )}
+              </div>
+
+              <div>
+                <h3 className="text-lg font-semibold text-gray-700 mt-6 border-b pb-2 mb-4">Blocos de Texto Condicionais</h3>
+                <div className="space-y-4">
+                  {editingTemplate.template_logic && Object.entries(editingTemplate.template_logic).map(([key, item]) => (
+                    <div key={key} className="p-4 border rounded-md bg-blue-50">
+                      <div className="flex justify-end">
+                        <button onClick={() => handleRemoveTemplateLogic(key)} className="text-xs text-red-500 hover:text-red-700">Remover Bloco</button>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600">Placeholder a Substituir</label>
+                          <input type="text" defaultValue={key} onBlur={e => handleTemplateLogicChange(key, e.target.value, {})} className="mt-1 block w-full px-2 py-1 text-sm border-gray-300 rounded-md font-mono" placeholder="ex: info_credito"/>
+                        </div>
+                        <div className="md:col-span-2">
+                          <label className="block text-xs font-medium text-gray-600">Texto a ser Inserido</label>
+                          <textarea value={(item as TemplateLogicItem).text} onChange={e => handleTemplateLogicChange(key, key, {text: e.target.value})} className="mt-1 block w-full px-2 py-1 text-sm border-gray-300 rounded-md font-mono" rows={3}></textarea>
+                        </div>
+                      </div>
+                      {renderConditionUI((item as TemplateLogicItem).condition, (data) => handleTemplateLogicChange(key, key, {condition: data || {field: '', value: ''}}), allFieldsForLogic, `logic-${key}`)}
                     </div>
+                  ))}
+                  <button onClick={handleAddTemplateLogic} className="text-sm text-green-600 hover:text-green-800">+ Adicionar bloco de texto condicional</button>
                 </div>
+              </div>
+            </>
+          ) : (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Anotações do Modelo</label>
+                <textarea
+                  rows={6}
+                  placeholder="Anotações internas, dicas de preenchimento..."
+                  value={editingTemplate.notes || ''}
+                  onChange={e => setEditingTemplate(prev => prev ? { ...prev, notes: e.target.value } : null)}
+                  className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">FAQ / Perguntas Frequentes</label>
+                <textarea
+                  rows={6}
+                  placeholder="Perguntas e respostas frequentes relacionadas a este modelo..."
+                  value={editingTemplate.faq || ''}
+                  onChange={e => setEditingTemplate(prev => prev ? { ...prev, faq: e.target.value } : null)}
+                  className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm"
+                />
+              </div>
+            </>
+          )}
+        </div>
                 <div className="px-6 py-4 bg-gray-50 border-t sticky bottom-0 z-10">
                     <div className="flex justify-end space-x-3">
                         <button onClick={handleCancel} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">Cancelar</button>

@@ -23,6 +23,9 @@ export interface Template {
   template: string;
   fields: TemplateField[];
   template_logic?: { [key: string]: TemplateLogicItem };
+  // Notas e FAQ para este modelo (opcionais)
+  notes?: string;
+  faq?: string;
 }
 
 export interface Atendimento {
