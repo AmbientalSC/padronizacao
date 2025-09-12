@@ -4,9 +4,9 @@ import { defineConfig, loadEnv } from 'vite';
 export default defineConfig(({ mode, command }) => {
     const env = loadEnv(mode, '.', '');
     
-    // Para GitHub Pages em produção, usar /padronizacao/
-    // Para preview local, usar /
-    const base = process.env.GITHUB_ACTIONS ? '/padronizacao/' : '/';
+    // Para desenvolvimento: sempre usar /
+    // Para build: usar /padronizacao/ se for para GitHub Pages
+    const base = command === 'build' && process.env.GITHUB_ACTIONS ? '/padronizacao/' : '/';
     
     return {
       base,
