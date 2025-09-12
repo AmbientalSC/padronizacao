@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Atendimento, Template } from '../types';
 import { ClipboardIcon, CheckIcon } from './icons/ClipboardIcon';
+import ConfirmModal from './ConfirmModal';
 
 interface AtendimentosProps {
   atendimentos: Atendimento[];
@@ -12,6 +13,17 @@ const Atendimentos: React.FC<AtendimentosProps> = ({ atendimentos, setAtendiment
   const [editingAtendimento, setEditingAtendimento] = useState<Atendimento | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [isCopied, setIsCopied] = useState(false);
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {}
+  });
 
   const handleEdit = (atendimento: Atendimento) => {
     setEditingAtendimento({ ...atendimento });
@@ -27,9 +39,15 @@ const Atendimentos: React.FC<AtendimentosProps> = ({ atendimentos, setAtendiment
   };
 
   const handleDelete = (id: number) => {
-    if (window.confirm('Tem certeza que deseja excluir este atendimento?')) {
-      setAtendimentos(prev => prev.filter(a => a.id !== id));
-    }
+    setConfirmModal({
+      isOpen: true,
+      title: 'Excluir Atendimento',
+      message: 'Tem certeza que deseja excluir este atendimento? Esta ação não pode ser desfeita.',
+      onConfirm: () => {
+        setAtendimentos(prev => prev.filter(a => a.id !== id));
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+      }
+    });
   };
 
   const handleCancel = () => {
@@ -42,6 +60,18 @@ const Atendimentos: React.FC<AtendimentosProps> = ({ atendimentos, setAtendiment
     navigator.clipboard.writeText(editingAtendimento.generatedText).then(() => {
       setIsCopied(true);
       setTimeout(() => setIsCopied(false), 2000);
+    });
+  };
+
+  const handleClearAtendimentos = () => {
+    setConfirmModal({
+      isOpen: true,
+      title: 'Limpar Todos os Atendimentos',
+      message: 'Tem certeza que deseja limpar todos os atendimentos? Esta ação não pode ser desfeita e removerá permanentemente todo o histórico.',
+      onConfirm: () => {
+        setAtendimentos([]);
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+      }
     });
   };
 
@@ -133,8 +163,18 @@ const Atendimentos: React.FC<AtendimentosProps> = ({ atendimentos, setAtendiment
                 </svg>
               </div>
             </div>
-            <div className="ml-4 text-sm text-gray-600">
-              {filteredAtendimentos.length} de {atendimentos.length} atendimentos
+            <div className="ml-4 flex items-center space-x-3">
+              <div className="text-sm text-gray-600">
+                {filteredAtendimentos.length} de {atendimentos.length} atendimentos
+              </div>
+              {atendimentos.length > 0 && (
+                <button
+                  onClick={handleClearAtendimentos}
+                  className="px-3 py-1.5 text-sm font-medium text-red-600 bg-red-50 border border-red-200 rounded-md hover:bg-red-100 hover:border-red-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200"
+                >
+                  Limpar Atendimentos
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -210,6 +250,19 @@ const Atendimentos: React.FC<AtendimentosProps> = ({ atendimentos, setAtendiment
             </div>
           )}
         </div>
+        
+        {renderEditModal()}
+        
+        <ConfirmModal
+          isOpen={confirmModal.isOpen}
+          title={confirmModal.title}
+          message={confirmModal.message}
+          confirmText="Excluir"
+          cancelText="Cancelar"
+          onConfirm={confirmModal.onConfirm}
+          onCancel={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+          variant="danger"
+        />
       </div>
     </div>
   );

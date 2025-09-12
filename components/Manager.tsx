@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Template, TemplateField, TemplateLogicItem, FieldCondition } from '../types';
+import ConfirmModal from './ConfirmModal';
 
 interface ManagerProps {
   templates: Template[];
@@ -17,6 +18,17 @@ const emptyTemplate: Omit<Template, 'id'> = {
 
 const Manager: React.FC<ManagerProps> = ({ templates, addTemplate, updateTemplate, deleteTemplate }) => {
   const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {}
+  });
 
   const handleCreateNew = () => {
     setEditingTemplate({ ...emptyTemplate, id: Date.now(), template_logic: {} });
@@ -31,16 +43,22 @@ const Manager: React.FC<ManagerProps> = ({ templates, addTemplate, updateTemplat
   };
 
   const handleDelete = async (id: number) => {
-    if (window.confirm('Tem certeza que deseja excluir este modelo?')) {
-      const result = await deleteTemplate(id);
-      if (result.success) {
-        if (editingTemplate?.id === id) {
-          setEditingTemplate(null);
+    setConfirmModal({
+      isOpen: true,
+      title: 'Excluir Modelo',
+      message: 'Tem certeza que deseja excluir este modelo? Esta ação não pode ser desfeita e o modelo será removido permanentemente.',
+      onConfirm: async () => {
+        const result = await deleteTemplate(id);
+        if (result.success) {
+          if (editingTemplate?.id === id) {
+            setEditingTemplate(null);
+          }
+        } else {
+          alert('Erro ao excluir template. Tente novamente.');
         }
-      } else {
-        alert('Erro ao excluir template. Tente novamente.');
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
       }
-    }
+    });
   };
 
   const handleSave = async () => {
@@ -357,6 +375,17 @@ const Manager: React.FC<ManagerProps> = ({ templates, addTemplate, updateTemplat
             )}
           </ul>
         </div>
+        
+        <ConfirmModal
+          isOpen={confirmModal.isOpen}
+          title={confirmModal.title}
+          message={confirmModal.message}
+          confirmText="Excluir"
+          cancelText="Cancelar"
+          onConfirm={confirmModal.onConfirm}
+          onCancel={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+          variant="danger"
+        />
       </div>
     </div>
   );
