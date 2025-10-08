@@ -18,44 +18,55 @@ export const useFirebaseTemplates = (isAuthenticated: boolean) => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      // Se não estiver autenticado, usar templates locais
-      const localTemplates = localStorage.getItem('atendimento-templates');
-      if (localTemplates) {
-        setTemplates(JSON.parse(localTemplates));
-      } else {
-        setTemplates(initialTemplates);
-      }
-      return;
-    }
-
-    // Se estiver autenticado, buscar templates do Firebase
+    // Always attempt to subscribe to Firestore templates. If that fails (permission/network),
+    // fallback to localStorage or initialTemplates so unauthenticated users still see something.
     setLoading(true);
     const templatesRef = collection(db, 'templates');
-    
-    const unsubscribe = onSnapshot(templatesRef, (snapshot) => {
-      const firebaseTemplates: Template[] = [];
-      snapshot.forEach((doc) => {
-        const data = doc.data();
-        // Use sempre o id do documento (doc.id) como identificador para evitar conflitos
-        // com um campo `id` armazenado dentro do documento.
-        // casting to any because Firestore doc.id is string while our Template.id is number in types.
-        // We purposely keep id as the document id string to guarantee uniqueness; comparisons in
-        // the app use toString(), so this is safe at runtime.
-        firebaseTemplates.push({ 
-          ...data,
-          id: doc.id as unknown as any
-        } as any);
-      });
-      
-      // Se não houver templates no Firebase, criar os iniciais
-      if (firebaseTemplates.length === 0) {
-        createInitialTemplates();
-      } else {
-        setTemplates(firebaseTemplates);
+
+    const unsubscribe = onSnapshot(
+      templatesRef,
+      (snapshot) => {
+        const firebaseTemplates: Template[] = [];
+        snapshot.forEach((doc) => {
+          const data = doc.data();
+          firebaseTemplates.push({
+            ...data,
+            id: doc.id as unknown as any
+          } as any);
+        });
+
+        if (firebaseTemplates.length === 0) {
+          // Only attempt to create initial templates in Firestore when authenticated
+          if (isAuthenticated) {
+            createInitialTemplates();
+          } else {
+            // if not authenticated and Firestore returned no templates, use local fallback
+            const localTemplates = localStorage.getItem('atendimento-templates');
+            if (localTemplates) {
+              setTemplates(JSON.parse(localTemplates));
+            } else {
+              setTemplates(initialTemplates);
+            }
+          }
+        } else {
+          setTemplates(firebaseTemplates);
+        }
+
+        setLoading(false);
+      },
+      (error) => {
+        // Firestore subscription failed (likely permission denied for unauthenticated users).
+        // Fallback to localStorage / initialTemplates so unauthenticated users still have templates.
+        console.warn('useFirebaseTemplates: failed to subscribe to Firestore, falling back to local templates', error);
+        const localTemplates = localStorage.getItem('atendimento-templates');
+        if (localTemplates) {
+          setTemplates(JSON.parse(localTemplates));
+        } else {
+          setTemplates(initialTemplates);
+        }
+        setLoading(false);
       }
-      setLoading(false);
-    });
+    );
 
     return unsubscribe;
   }, [isAuthenticated]);
@@ -63,8 +74,22 @@ export const useFirebaseTemplates = (isAuthenticated: boolean) => {
   const createInitialTemplates = async () => {
     try {
       const templatesRef = collection(db, 'templates');
+      // deep clean helper to remove undefined and id fields
+      const deepCleanLocal = (obj: any): any => {
+        if (obj === null || typeof obj !== 'object') return obj;
+        if (Array.isArray(obj)) return obj.map(v => deepCleanLocal(v));
+        const res: any = {};
+        Object.entries(obj).forEach(([k, v]) => {
+          if (v === undefined) return;
+          if (k === 'id') return;
+          res[k] = deepCleanLocal(v);
+        });
+        return res;
+      };
+
       for (const template of initialTemplates) {
-        await addDoc(templatesRef, template);
+        const cleaned = deepCleanLocal(template);
+        await addDoc(templatesRef, cleaned);
       }
     } catch (error) {
       console.error('Erro ao criar templates iniciais:', error);
@@ -75,13 +100,26 @@ export const useFirebaseTemplates = (isAuthenticated: boolean) => {
     try {
       if (isAuthenticated) {
         const templatesRef = collection(db, 'templates');
-        await addDoc(templatesRef, template);
+        // clean payload before sending to Firestore
+        const deepCleanLocal = (obj: any): any => {
+          if (obj === null || typeof obj !== 'object') return obj;
+          if (Array.isArray(obj)) return obj.map(v => deepCleanLocal(v));
+          const res: any = {};
+          Object.entries(obj).forEach(([k, v]) => {
+            if (v === undefined) return;
+            if (k === 'id') return;
+            res[k] = deepCleanLocal(v);
+          });
+          return res;
+        };
+        const cleaned = deepCleanLocal(template);
+        await addDoc(templatesRef, cleaned);
       } else {
         // Fallback para localStorage se não estiver autenticado
         const newTemplate = { ...template, id: Date.now() };
         const updatedTemplates = [...templates, newTemplate];
         setTemplates(updatedTemplates);
-        localStorage.setItem('atendimento-templates', JSON.stringify(updatedTemplates));
+  localStorage.setItem('atendimento-templates', JSON.stringify(updatedTemplates));
       }
       return { success: true };
     } catch (error) {
@@ -112,15 +150,23 @@ export const useFirebaseTemplates = (isAuthenticated: boolean) => {
           delete cleaned.id;
         }
 
-        // Use setDoc with merge para criar/atualizar com mais segurança
-        await setDoc(templateRef, cleaned || {}, { merge: true });
+        // If the update contains full objects like 'fields', 'template' or 'template_logic',
+        // we should NOT use merge, so that deletions (e.g. removed placeholders) are persisted.
+        const shouldOverwrite = cleaned && (cleaned.fields !== undefined || cleaned.template !== undefined || cleaned.template_logic !== undefined);
+        if (shouldOverwrite) {
+          // overwrite the document with the cleaned payload
+          await setDoc(templateRef, cleaned || {});
+        } else {
+          // Use setDoc with merge to update partial props safely
+          await setDoc(templateRef, cleaned || {}, { merge: true });
+        }
       } else {
         // Fallback para localStorage
         const updatedTemplates = templates.map(t => 
           t.id.toString() === templateId.toString() ? { ...t, ...updatedData } : t
         );
         setTemplates(updatedTemplates);
-        localStorage.setItem('atendimento-templates', JSON.stringify(updatedTemplates));
+  localStorage.setItem('atendimento-templates', JSON.stringify(updatedTemplates));
       }
       return { success: true };
     } catch (error) {

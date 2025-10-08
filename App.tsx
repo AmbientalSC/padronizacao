@@ -16,6 +16,7 @@ const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<Tab>('generator');
   const [atendimentos, setAtendimentos] = useLocalStorage<Atendimento[]>('atendimentos-historico', []);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showFAQModal, setShowFAQModal] = useState(false);
   
   const { user, isAuthenticated, logout } = useAuth();
   const { templates, loading, addTemplate, updateTemplate, deleteTemplate } = useFirebaseTemplates(isAuthenticated);
@@ -61,7 +62,7 @@ const App: React.FC = () => {
                 <h1 className="text-2xl font-bold text-gray-800">Relação com o usuário</h1>
             </div>
             <div className="flex items-center space-x-4">
-                <nav className="flex space-x-2 bg-gray-100 p-1 rounded-lg">
+                <nav className="flex space-x-2 bg-gray-100 p-1 rounded-lg items-center">
                     <TabButton tab="generator">Gerador</TabButton>
                     <TabButton tab="atendimentos">Atendimentos</TabButton>
                     <TabButton tab="manager" onClick={handleManagerTabClick}>
@@ -69,6 +70,18 @@ const App: React.FC = () => {
                         {isAuthenticated && <span className="ml-1 text-xs">🔓</span>}
                     </TabButton>
                 </nav>
+                {/* Botão FAQ colocado à direita do header, próximo ao botão Sair */}
+                <div>
+                  <button
+                    onClick={() => { setActiveTab('generator'); setShowFAQModal(true); }}
+                    title="FAQ"
+                    className="ml-2 px-2 py-1 rounded-md text-sm text-gray-600 hover:bg-gray-200"
+                  >
+                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M12 20a8 8 0 100-16 8 8 0 000 16z" />
+                    </svg>
+                  </button>
+                </div>
                 {isAuthenticated && (
                     <button
                         onClick={handleLogout}
@@ -81,7 +94,15 @@ const App: React.FC = () => {
         </div>
       </header>
       <main>
-        {activeTab === 'generator' && <Generator templates={templates} atendimentos={atendimentos} setAtendimentos={setAtendimentos} />}
+        {activeTab === 'generator' && (
+          <Generator
+            templates={templates}
+            atendimentos={atendimentos}
+            setAtendimentos={setAtendimentos}
+            showFAQModal={showFAQModal}
+            setShowFAQModal={setShowFAQModal}
+          />
+        )}
         {activeTab === 'atendimentos' && <Atendimentos atendimentos={atendimentos} setAtendimentos={setAtendimentos} templates={templates} />}
         {activeTab === 'manager' && <Manager templates={templates} addTemplate={addTemplate} updateTemplate={updateTemplate} deleteTemplate={deleteTemplate} />}
       </main>

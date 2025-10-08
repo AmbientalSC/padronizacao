@@ -7,14 +7,20 @@ export interface FieldCondition {
 export interface TemplateField {
   name: string;
   label: string;
-  type: 'text' | 'number' | 'date' | 'email' | 'textarea' | 'select' | 'checkbox';
-  options?: string[]; // for select
+  type: 'text' | 'number' | 'date' | 'email' | 'textarea' | 'select' | 'checkbox' | 'telefone' | 'cpfcnpj' | 'endereco' | 'multiselect';
+  options?: string[]; // for select and multiselect
   condition?: FieldCondition;
+  // If type === 'date', optional format selector
+  dateFormat?: 'dd/mm/yyyy' | 'mm/yyyy';
+  // If type === 'number', optional decimals setting (e.g. 2 for fixed two decimals)
+  numberDecimals?: number | null;
 }
 
 export interface TemplateLogicItem {
   condition: FieldCondition;
   text: string;
+  // Optional extra fields to inject into the form when this logic block is active
+  injectFields?: TemplateField[];
 }
 
 export interface Template {
@@ -26,6 +32,8 @@ export interface Template {
   // Notas e FAQ para este modelo (opcionais)
   notes?: string;
   faq?: string;
+  // Ordem de exibição do modelo (usado para enumeração)
+  order?: number;
 }
 
 export interface Atendimento {

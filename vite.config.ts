@@ -25,6 +25,9 @@ export default defineConfig(({ mode, command }) => {
         sourcemap: false,
         // Garantir que os assets sejam referenciados corretamente
         rollupOptions: {
+          input: {
+            main: path.resolve(__dirname, 'index.html')
+          },
           output: {
             assetFileNames: 'assets/[name].[hash].[ext]'
           }
