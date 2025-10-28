@@ -32,7 +32,7 @@ const Manager: React.FC<ManagerProps> = ({ templates, addTemplate, updateTemplat
     onConfirm: () => {}
   });
 
-  const [activeTab, setActiveTab] = useState<'content' | 'notes' | 'test'>('content');
+  const [activeTab, setActiveTab] = useState<'content' | 'notes' | 'test' | 'organize'>('content');
   const [testFormData, setTestFormData] = useState<Record<string, any>>({});
   const [validationState, setValidationState] = useState<{ open: boolean; errors: string[]; fieldErrors: Record<string, string[]> }>({ open: false, errors: [], fieldErrors: {} });
   const [draggedItem, setDraggedItem] = useState<Template | null>(null);
@@ -402,6 +402,101 @@ const Manager: React.FC<ManagerProps> = ({ templates, addTemplate, updateTemplat
       setEditingTemplate(prev => prev ? { ...prev, fields: updatedFields } : null);
   };
 
+  // Drag & drop state and handlers for organizing fields
+  const [draggedFieldName, setDraggedFieldName] = useState<string | null>(null);
+  const [dragOverFieldName, setDragOverFieldName] = useState<string | null>(null);
+
+  const handleFieldDragStart = (e: React.DragEvent, name: string) => {
+    setDraggedFieldName(name);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleFieldDragOver = (e: React.DragEvent, name: string) => {
+    e.preventDefault();
+    setDragOverFieldName(name);
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleFieldDragLeave = (_e: React.DragEvent) => {
+    setDragOverFieldName(null);
+  };
+
+  const handleFieldDrop = (e: React.DragEvent, targetName: string) => {
+    e.preventDefault();
+    const dragged = draggedFieldName;
+    setDraggedFieldName(null);
+    setDragOverFieldName(null);
+    if (!dragged || dragged === targetName) return;
+    setEditingTemplate(prev => {
+      if (!prev) return prev;
+      const copy = JSON.parse(JSON.stringify(prev));
+      const all = copy.fields || [];
+      const from = all.findIndex((f: any) => f.name === dragged);
+      const to = all.findIndex((f: any) => f.name === targetName);
+      if (from === -1 || to === -1) return copy;
+      const item = all.splice(from, 1)[0];
+      const insertIndex = from < to ? to - 1 : to;
+      all.splice(insertIndex, 0, item);
+      copy.fields = all;
+      return copy;
+    });
+  };
+
+  // Move a base (non-injected) field up in the editingTemplate.fields order
+  const moveFieldUp = (fieldName: string) => {
+    setEditingTemplate(prev => {
+      if (!prev) return prev;
+      const copy = JSON.parse(JSON.stringify(prev));
+      // build injected names set
+      const injectedNames = new Set<string>();
+      if (copy.template_logic) {
+        Object.values(copy.template_logic).forEach((li: any) => {
+          if (Array.isArray(li.injectFields)) li.injectFields.forEach((f: any) => injectedNames.add(f.name));
+        });
+      }
+      // find index of this field among all fields
+      const all = copy.fields || [];
+      const idx = all.findIndex((f: any) => f.name === fieldName);
+      if (idx <= 0) return copy;
+      // find previous non-injected index
+      let prevIdx = idx - 1;
+      while (prevIdx >= 0 && injectedNames.has(all[prevIdx].name)) prevIdx--;
+      if (prevIdx < 0) return copy;
+      // swap
+      const tmp = all[prevIdx];
+      all[prevIdx] = all[idx];
+      all[idx] = tmp;
+      copy.fields = all;
+      return copy;
+    });
+  };
+
+  // Move a base (non-injected) field down in the editingTemplate.fields order
+  const moveFieldDown = (fieldName: string) => {
+    setEditingTemplate(prev => {
+      if (!prev) return prev;
+      const copy = JSON.parse(JSON.stringify(prev));
+      const injectedNames = new Set<string>();
+      if (copy.template_logic) {
+        Object.values(copy.template_logic).forEach((li: any) => {
+          if (Array.isArray(li.injectFields)) li.injectFields.forEach((f: any) => injectedNames.add(f.name));
+        });
+      }
+      const all = copy.fields || [];
+      const idx = all.findIndex((f: any) => f.name === fieldName);
+      if (idx === -1 || idx >= all.length - 1) return copy;
+      // find next non-injected index
+      let nextIdx = idx + 1;
+      while (nextIdx < all.length && injectedNames.has(all[nextIdx].name)) nextIdx++;
+      if (nextIdx >= all.length) return copy;
+      const tmp = all[nextIdx];
+      all[nextIdx] = all[idx];
+      all[idx] = tmp;
+      copy.fields = all;
+      return copy;
+    });
+  };
+
   const handleAddTemplateLogic = () => {
     if (!editingTemplate) return;
     const newKey = `nova_logica_${Object.keys(editingTemplate.template_logic || {}).length + 1}`;
@@ -697,10 +792,11 @@ const Manager: React.FC<ManagerProps> = ({ templates, addTemplate, updateTemplat
         <div className="p-6 space-y-6">
           <div className="flex items-center space-x-4 mb-4">
             <button onClick={() => setActiveTab('content')} className={`px-3 py-1 text-sm font-medium rounded ${activeTab === 'content' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700'}`}>Conteúdo</button>
+            <button onClick={() => setActiveTab('organize')} className={`px-3 py-1 text-sm font-medium rounded ${activeTab === 'organize' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700'}`}>Organizar Campos</button>
             <button onClick={() => setActiveTab('notes')} className={`px-3 py-1 text-sm font-medium rounded ${activeTab === 'notes' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700'}`}>Anotações</button>
             <button onClick={() => setActiveTab('test')} className={`px-3 py-1 text-sm font-medium rounded ${activeTab === 'test' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`}>Testar Modelo</button>
           </div>
-          {activeTab === 'test' && (
+      {activeTab === 'test' && (
             <div>
               <h3 className="text-lg font-semibold text-gray-700 mt-4 mb-2">Testar Modelo</h3>
               <p className="text-sm text-gray-500 mb-4">Preencha valores de exemplo para ver como o template ficará ao gerar o texto.</p>
@@ -977,6 +1073,49 @@ const Manager: React.FC<ManagerProps> = ({ templates, addTemplate, updateTemplat
                   ))}
                   <button onClick={handleAddTemplateLogic} className="text-sm text-green-600 hover:text-green-800">+ Adicionar bloco de texto condicional</button>
                 </div>
+              </div>
+            </>
+          ) : activeTab === 'organize' ? (
+            <>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-700 mt-4 mb-2">Organizar Campos</h3>
+                <p className="text-sm text-gray-500 mb-4">Arraste ou use os botões para ajustar a sequência dos campos como aparecerão no formulário gerado.</p>
+                <div className="space-y-2">
+                  {(() => {
+                    // Exclude injected fields (they are shown only when logic is active).
+                    const injectedNames = new Set<string>();
+                    if (editingTemplate.template_logic) {
+                      Object.values(editingTemplate.template_logic).forEach((li: any) => {
+                        if (Array.isArray(li.injectFields)) li.injectFields.forEach((f: any) => injectedNames.add(f.name));
+                      });
+                    }
+                    const baseFields = (editingTemplate.fields || []).filter(f => !injectedNames.has(f.name));
+                    if (baseFields.length === 0) return <p className="text-sm text-gray-500">Nenhum campo para organizar.</p>;
+                    return baseFields.map((f: any, idx: number) => {
+                      const isDragOver = dragOverFieldName === f.name;
+                      return (
+                        <div
+                          key={f.name}
+                          draggable
+                          onDragStart={(e) => handleFieldDragStart(e, f.name)}
+                          onDragOver={(e) => handleFieldDragOver(e, f.name)}
+                          onDrop={(e) => handleFieldDrop(e, f.name)}
+                          onDragLeave={handleFieldDragLeave}
+                          className={`flex items-center justify-between p-3 border rounded ${isDragOver ? 'bg-green-50 border-t-2 border-green-300' : 'bg-gray-50'}`}
+                        >
+                          <div>
+                            <p className="font-mono text-sm text-green-700">{`{{${f.name}}}`}</p>
+                            <p className="text-sm text-gray-700">{f.label || '(sem label)'}</p>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <span className="text-xs text-gray-500 italic">Arraste para reordenar</span>
+                          </div>
+                        </div>
+                      );
+                    });
+                  })()}
+                </div>
+                <p className="text-xs text-gray-500 mt-3">A ordem será salva quando você clicar em <strong>Salvar Modelo</strong>.</p>
               </div>
             </>
           ) : (
