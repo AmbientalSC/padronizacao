@@ -585,15 +585,15 @@ const Generator: React.FC<GeneratorProps> = ({ templates, atendimentos, setAtend
       } else {
         replacement = String(val);
       }
-      console.log(`🔄 Substituindo "{{${key}}}" por "${replacement}"`); // DEBUG
+      // console.log(`🔄 Substituindo "{{${key}}}" por "${replacement}"`);
       const before = output;
       output = output.replace(new RegExp(`{{${key}}}`, 'g'), replacement);
       if (before === output && replacement) {
-        console.warn(`⚠️ Placeholder {{${key}}} NÃO foi encontrado no template!`); // DEBUG
+        // console.warn(`⚠️ Placeholder {{${key}}} NÃO foi encontrado no template!`);
       }
     });
     
-    console.log('✨ Output final:', output); // DEBUG
+    // console.log('✨ Output final:', output);
     return output;
   }, [formData, selectedTemplate]);
   

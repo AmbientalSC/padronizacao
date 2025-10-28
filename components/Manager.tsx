@@ -310,22 +310,38 @@ const Manager: React.FC<ManagerProps> = ({ templates, addTemplate, updateTemplat
     templateTextTimerRef.current = setTimeout(() => {
       // Extract placeholders only after user stops typing for 500ms
       const placeholders = [...new Set([...newTemplateText.matchAll(/{{(.*?)}}/g)].map(match => match[1]))];
-      
-      // Only add NEW fields for placeholders not already in fields or template_logic
-      const existingFieldNames = new Set(editingTemplate.fields.map(f => f.name));
-      const logicPlaceholders = new Set(editingTemplate.template_logic ? Object.keys(editingTemplate.template_logic) : []);
-      
-      const fieldsToAdd: TemplateField[] = placeholders
-        .filter(p => !existingFieldNames.has(p) && !logicPlaceholders.has(p))
-        .map((name): TemplateField => ({ name, label: name, type: 'text' }));
 
-      if (fieldsToAdd.length > 0) {
-        setEditingTemplate(prev => {
-          if (!prev) return null;
-          const updatedFields = [...prev.fields, ...fieldsToAdd];
-          return { ...prev, fields: updatedFields };
+      // Update fields: add new placeholders as fields, and remove auto-created fields
+      // that no longer have a corresponding placeholder. We only remove fields that
+      // were auto-created by this editor (heuristic: label === name && type === 'text')
+      // to avoid deleting user-customized fields unexpectedly.
+      setEditingTemplate(prev => {
+        if (!prev) return null;
+
+        const existingFieldNames = new Set(prev.fields.map(f => f.name));
+        const logicPlaceholders = new Set(prev.template_logic ? Object.keys(prev.template_logic) : []);
+
+        // New fields to add for placeholders that don't exist yet
+        const fieldsToAdd: TemplateField[] = placeholders
+          .filter(p => !existingFieldNames.has(p) && !logicPlaceholders.has(p))
+          .map((name): TemplateField => ({ name, label: name, type: 'text' }));
+
+        // Remove only auto-created fields (label === name && type === 'text') that
+        // are no longer present as placeholders and are not logic placeholders.
+        const filteredExisting = prev.fields.filter(f => {
+          // Heuristic for "auto-created" fields:
+          // - type === 'text' AND (label equals name OR label is empty/blank)
+          // This covers cases where the user never customized the label, or cleared it.
+          const labelStr = f.label == null ? '' : String(f.label);
+          const isAutoCreated = f.type === 'text' && (labelStr.trim() === '' || labelStr === f.name);
+          const stillReferenced = placeholders.includes(f.name) || logicPlaceholders.has(f.name);
+          if (isAutoCreated && !stillReferenced) return false; // drop it
+          return true;
         });
-      }
+
+        const updatedFields = [...filteredExisting, ...fieldsToAdd];
+        return { ...prev, fields: updatedFields };
+      });
     }, 500);
   };
 
@@ -347,6 +363,25 @@ const Manager: React.FC<ManagerProps> = ({ templates, addTemplate, updateTemplat
   // debug logs removed after fix
 
     setEditingTemplate(prev => prev ? { ...prev, fields: updatedFields } : null);
+  };
+
+  // Remove label for a field (by name) and also remove its placeholder from the template text.
+  // Uses the field name so it doesn't depend on array indices that may shift.
+  const handleRemoveLabelByName = (fieldName: string) => {
+    setEditingTemplate(prev => {
+      if (!prev) return prev;
+      const copy = JSON.parse(JSON.stringify(prev));
+
+      const name = String(fieldName);
+      // Remove occurrences of the placeholder {{name}} from the template text
+      const placeholderRe = new RegExp('{{\\s*' + name.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&') + '\\s*}}', 'g');
+      copy.template = (copy.template || '').replace(placeholderRe, '');
+
+      // Remove any field(s) with this name (user requested removing the block)
+      copy.fields = copy.fields.filter((fld: any) => String(fld.name) !== name);
+
+      return copy;
+    });
   };
 
   const handleFieldConditionChange = (fieldIndex: number, conditionData: Partial<FieldCondition> | null) => {
@@ -728,7 +763,10 @@ const Manager: React.FC<ManagerProps> = ({ templates, addTemplate, updateTemplat
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
                             <label className="block text-xs font-medium text-gray-600">Label do Campo</label>
-                            <input type="text" value={field.label} onChange={e => handleFieldChange(index, { label: e.target.value })} className={`mt-1 block w-full px-2 py-1 text-sm rounded-md ${validationState.fieldErrors[`field:${field.name || index}`] ? 'border-red-500 border' : 'border border-gray-300'}`}/>
+                            <div className="flex items-center space-x-2">
+                              <input type="text" value={field.label} onChange={e => handleFieldChange(index, { label: e.target.value })} className={`mt-1 block w-full px-2 py-1 text-sm rounded-md ${validationState.fieldErrors[`field:${field.name || index}`] ? 'border-red-500 border' : 'border border-gray-300'}`}/>
+                              <button type="button" onClick={() => handleRemoveLabelByName(field.name)} className="mt-1 text-xs text-red-500 hover:text-red-700">Remover</button>
+                            </div>
                             {validationState.fieldErrors[`field:${field.name || index}`] && (
                               <p className="text-xs text-red-600 mt-1">{validationState.fieldErrors[`field:${field.name || index}`].join('; ')}</p>
                             )}
