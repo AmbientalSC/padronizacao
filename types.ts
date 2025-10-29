@@ -7,7 +7,11 @@ export interface FieldCondition {
 export interface TemplateField {
   name: string;
   label: string;
-  type: 'text' | 'number' | 'date' | 'email' | 'textarea' | 'select' | 'checkbox' | 'telefone' | 'cpfcnpj' | 'endereco' | 'multiselect';
+  type: 'text' | 'number' | 'date' | 'email' | 'textarea' | 'select' | 'checkbox' | 'telefone' | 'cpfcnpj' | 'endereco' | 'multiselect' | 'aviso';
+  // 'aviso' is a non-interactive label displayed in the dynamic form
+  // it does not render an input — only shows the label as informational text.
+  // Add it to the allowed types.
+  // NOTE: Update code that switches on field.type to handle 'aviso'.
   options?: string[]; // for select and multiselect
   condition?: FieldCondition;
   // If type === 'date', optional format selector

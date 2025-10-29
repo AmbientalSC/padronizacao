@@ -16,6 +16,8 @@ const Generator: React.FC<GeneratorProps> = ({ templates, atendimentos, setAtend
   const [formData, setFormData] = useState<{ [key: string]: any }>({});
   const [isCopied, setIsCopied] = useState(false);
   const [showSavedToast, setShowSavedToast] = useState(false);
+  const [isEditingPreview, setIsEditingPreview] = useState(false);
+  const [editablePreviewText, setEditablePreviewText] = useState('');
   const [cpfCnpjMode, setCpfCnpjMode] = useState<Record<string, 'cpf' | 'cnpj'>>({});
     // Se o pai fornecer controle do FAQ, usa-o; caso contrário usa estado local
     const [localFAQOpen, setLocalFAQOpen] = useState(false);
@@ -598,11 +600,15 @@ const Generator: React.FC<GeneratorProps> = ({ templates, atendimentos, setAtend
   }, [formData, selectedTemplate]);
   
   const handleCopyToClipboard = () => {
-    navigator.clipboard.writeText(generatedText).then(() => {
+    const textToCopy = isEditingPreview && editablePreviewText ? editablePreviewText : generatedText;
+    navigator.clipboard.writeText(textToCopy).then(() => {
       setIsCopied(true);
       setTimeout(() => setIsCopied(false), 2000);
     });
   };
+
+  // Current text shown in the preview area (either edited text or generated text)
+  const currentPreviewText = isEditingPreview ? editablePreviewText : (editablePreviewText || generatedText);
 
   const handleProximoAtendimento = () => {
     if (!selectedTemplate || !generatedText.trim()) {
@@ -635,7 +641,8 @@ const Generator: React.FC<GeneratorProps> = ({ templates, atendimentos, setAtend
       templateId: selectedTemplate.id,
       templateTitle: selectedTemplate.title,
       formData: formattedFormData,
-      generatedText: generatedText,
+      // Save the edited preview text if present, otherwise the generated text
+      generatedText: currentPreviewText || generatedText,
       createdAt: new Date().toISOString()
     };
 
@@ -645,6 +652,9 @@ const Generator: React.FC<GeneratorProps> = ({ templates, atendimentos, setAtend
     setSelectedTemplateId('');
     setFormData({});
     setIsCopied(false);
+  // Clear any temporary edited preview after saving the atendimento
+  setEditablePreviewText('');
+  setIsEditingPreview(false);
 
     // Show toast
     setShowSavedToast(true);
@@ -690,8 +700,14 @@ const Generator: React.FC<GeneratorProps> = ({ templates, atendimentos, setAtend
 
     return (
       <div key={field.name} className="mb-4">
-        <label htmlFor={field.name} className="block text-sm font-medium text-gray-700">{field.label}</label>
-        {field.type === 'textarea' && <textarea {...commonProps} value={formData[field.name] || ''} rows={3}></textarea>}
+        {field.type === 'aviso' ? (
+          // Non-interactive notice displayed inline in the form
+          <div className="p-3 bg-yellow-50 border-l-4 border-yellow-300 rounded text-sm text-yellow-800">{field.label}</div>
+        ) : (
+          <label htmlFor={field.name} className="block text-sm font-medium text-gray-700">{field.label}</label>
+        )}
+  {field.type === 'textarea' && <textarea {...commonProps} value={formData[field.name] || ''} rows={3}></textarea>}
+  {field.type === 'aviso' && null}
         {field.type === 'select' && (
           <select {...commonProps} value={formData[field.name] || ''}>
             <option value="">Selecione...</option>
@@ -858,8 +874,8 @@ const Generator: React.FC<GeneratorProps> = ({ templates, atendimentos, setAtend
                 <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9l-4.95 4.95a1 1 0 01-1.414 0L3.636 13.95a7 7 0 011.414-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
               </svg>
             </button>
-            {addressSuggestions[field.name] && addressSuggestions[field.name].length > 0 && (
-              <ul className="address-suggestion absolute z-20 left-0 right-0 bg-white border mt-1 rounded max-h-48 overflow-auto text-sm">
+              {addressSuggestions[field.name] && addressSuggestions[field.name].length > 0 && (
+              <ul className="address-suggestion absolute z-20 left-0 right-0 top-full mt-1 bg-white border rounded max-h-48 overflow-auto text-sm">
                 {addressSuggestions[field.name].map((s: any, i) => (
                   <li key={i} className="px-3 py-2 hover:bg-gray-100 cursor-pointer" onClick={() => {
                     // set selected address (short) and clear suggestions; also store lat/lon under fieldname__lat/long
@@ -1031,19 +1047,37 @@ const Generator: React.FC<GeneratorProps> = ({ templates, atendimentos, setAtend
               <div className="bg-white p-6 rounded-lg shadow-md self-start lg:sticky lg:top-20">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-xl font-semibold text-gray-800">Preview em Tempo Real</h2>
-                  <button
-                    onClick={handleCopyToClipboard}
-                    className="flex items-center justify-center px-3 py-1.5 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-150"
-                    disabled={!generatedText}
-                  >
-                    {isCopied ? <CheckIcon className="h-5 w-5 mr-1" /> : <ClipboardIcon className="h-5 w-5 mr-1" />}
-                    {isCopied ? 'Copiado!' : 'Copiar'}
-                  </button>
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => {
+                        if (!isEditingPreview) {
+                          // start editing: keep previous manual edits if present, otherwise preload generated text
+                          setEditablePreviewText(prev => (prev && String(prev).trim() !== '') ? prev : generatedText);
+                          setIsEditingPreview(true);
+                        } else {
+                          // finish editing (keep editablePreviewText so user can re-open and continue editing)
+                          setIsEditingPreview(false);
+                        }
+                      }}
+                      className={`px-3 py-1.5 text-sm font-medium text-white ${isEditingPreview ? 'bg-gray-500 hover:bg-gray-600' : 'bg-blue-600 hover:bg-blue-700'} rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-150`}
+                    >
+                      {isEditingPreview ? 'Concluir' : 'Editar'}
+                    </button>
+                    <button
+                      onClick={handleCopyToClipboard}
+                      className="flex items-center justify-center px-3 py-1.5 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-150"
+                      disabled={!currentPreviewText || String(currentPreviewText).trim() === ''}
+                    >
+                      {isCopied ? <CheckIcon className="h-5 w-5 mr-1" /> : <ClipboardIcon className="h-5 w-5 mr-1" />}
+                      {isCopied ? 'Copiado!' : 'Copiar'}
+                    </button>
+                  </div>
                 </div>
                 <textarea
-                  readOnly
-                  value={generatedText}
-                  className="w-full min-h-[18rem] p-3 bg-gray-50 border border-gray-300 rounded-md shadow-inner text-sm font-mono"
+                  readOnly={!isEditingPreview}
+                  value={currentPreviewText}
+                  onChange={(e) => { if (isEditingPreview) setEditablePreviewText(e.target.value); }}
+                  className={`w-full min-h-[18rem] p-3 ${isEditingPreview ? 'bg-white' : 'bg-gray-50'} border border-gray-300 rounded-md shadow-inner text-sm font-mono`}
                   placeholder="O texto gerado aparecerá aqui..."
                 />
                 {generatedText && (
