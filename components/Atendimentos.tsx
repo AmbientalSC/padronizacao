@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { Atendimento, Template } from '../types';
 import { ClipboardIcon, CheckIcon } from './icons/ClipboardIcon';
 import ConfirmModal from './ConfirmModal';
+import { useAuth } from '../hooks/useAuth';
+import { db } from '../firebase/config';
+import { collection, getDocs, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 
 interface AtendimentosProps {
   atendimentos: Atendimento[];
@@ -25,6 +28,8 @@ const Atendimentos: React.FC<AtendimentosProps> = ({ atendimentos, setAtendiment
     onConfirm: () => {}
   });
 
+  const { user } = useAuth() as any;
+
   const handleEdit = (atendimento: Atendimento) => {
     setEditingAtendimento({ ...atendimento });
   };
@@ -35,6 +40,15 @@ const Atendimentos: React.FC<AtendimentosProps> = ({ atendimentos, setAtendiment
     setAtendimentos(prev => 
       prev.map(a => a.id === editingAtendimento.id ? editingAtendimento : a)
     );
+    // Persist edit to Firestore if this atendimento comes from Firestore (id is string)
+    try {
+      if (user && user.uid && typeof editingAtendimento.id === 'string') {
+        const docRef = doc(db, 'users', user.uid, 'atendimentos', String(editingAtendimento.id));
+        updateDoc(docRef, { generatedText: editingAtendimento.generatedText }).catch(err => console.warn('Erro ao atualizar atendimento no Firestore', err));
+      }
+    } catch (e) {
+      // ignore
+    }
     setEditingAtendimento(null);
   };
 
@@ -44,6 +58,16 @@ const Atendimentos: React.FC<AtendimentosProps> = ({ atendimentos, setAtendiment
       title: 'Excluir Atendimento',
       message: 'Tem certeza que deseja excluir este atendimento? Esta ação não pode ser desfeita.',
       onConfirm: () => {
+        // delete from Firestore if this appears to be a Firestore doc id (string) or if user is logged in
+        (async () => {
+          try {
+            if (user && user.uid && typeof id === 'string') {
+              await deleteDoc(doc(db, 'users', user.uid, 'atendimentos', String(id)));
+            }
+          } catch (e) {
+            console.warn('Erro ao excluir atendimento no Firestore', e);
+          }
+        })();
         setAtendimentos(prev => prev.filter(a => a.id !== id));
         setConfirmModal(prev => ({ ...prev, isOpen: false }));
       }
@@ -69,6 +93,18 @@ const Atendimentos: React.FC<AtendimentosProps> = ({ atendimentos, setAtendiment
       title: 'Limpar Todos os Atendimentos',
       message: 'Tem certeza que deseja limpar todos os atendimentos? Esta ação não pode ser desfeita e removerá permanentemente todo o histórico.',
       onConfirm: () => {
+        (async () => {
+          try {
+            if (user && user.uid) {
+              const colRef = collection(db, 'users', user.uid, 'atendimentos');
+              const snap = await getDocs(colRef);
+              const deletes = snap.docs.map(d => deleteDoc(doc(db, 'users', user.uid, 'atendimentos', d.id)));
+              await Promise.all(deletes);
+            }
+          } catch (e) {
+            console.warn('Erro ao limpar atendimentos no Firestore', e);
+          }
+        })();
         setAtendimentos([]);
         setConfirmModal(prev => ({ ...prev, isOpen: false }));
       }

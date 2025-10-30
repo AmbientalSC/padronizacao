@@ -7,6 +7,7 @@ interface ManagerProps {
   addTemplate: (template: Omit<Template, 'id'>) => Promise<{ success: boolean; error?: any }>;
   updateTemplate: (templateId: string | number, updatedData: Partial<Template>) => Promise<{ success: boolean; error?: any }>;
   deleteTemplate: (templateId: string | number) => Promise<{ success: boolean; error?: any }>;
+  isManager?: boolean;
 }
 
 const emptyTemplate: Omit<Template, 'id'> = {
@@ -16,7 +17,8 @@ const emptyTemplate: Omit<Template, 'id'> = {
   template_logic: {}
 };
 
-const Manager: React.FC<ManagerProps> = ({ templates, addTemplate, updateTemplate, deleteTemplate }) => {
+const Manager: React.FC<ManagerProps> = ({ templates, addTemplate, updateTemplate, deleteTemplate, isManager = false }) => {
+  const canEdit = !!isManager;
   const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
   const [templateTextBuffer, setTemplateTextBuffer] = useState<string>(''); // buffer for debounced template text
   const templateTextTimerRef = React.useRef<any>(null);
@@ -1177,9 +1179,15 @@ const Manager: React.FC<ManagerProps> = ({ templates, addTemplate, updateTemplat
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold text-gray-800">Gerenciador de Modelos</h1>
-          <button onClick={handleCreateNew} className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700">
-            Criar Novo Modelo
-          </button>
+          {canEdit ? (
+            <button onClick={handleCreateNew} className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700">
+              Criar Novo Modelo
+            </button>
+          ) : (
+            <button title="Apenas gestores podem criar modelos" disabled className="px-4 py-2 text-sm font-medium text-white bg-gray-300 rounded-md opacity-70 cursor-not-allowed">
+              Criar Novo Modelo
+            </button>
+          )}
         </div>
         
         {renderEditForm()}
@@ -1192,16 +1200,16 @@ const Manager: React.FC<ManagerProps> = ({ templates, addTemplate, updateTemplat
           <ul className="divide-y divide-gray-200">
             {sortedTemplates.length > 0 ? sortedTemplates.map((template, index) => (
               <li 
-                key={template.id.toString()} 
-                draggable
-                onDragStart={(e) => handleDragStart(e, template)}
-                onDragOver={(e) => handleDragOver(e, index)}
-                onDragLeave={handleDragLeave}
-                onDrop={(e) => handleDrop(e, index)}
-                className={`px-6 py-4 flex items-center justify-between hover:bg-gray-50 cursor-move transition-colors ${
-                  dragOverIndex === index ? 'bg-green-50 border-t-2 border-green-300' : ''
-                } ${draggedItem?.id === template.id ? 'opacity-50' : ''}`}
-              >
+                  key={template.id.toString()} 
+                  draggable={canEdit}
+                  onDragStart={canEdit ? (e) => handleDragStart(e, template) : undefined}
+                  onDragOver={canEdit ? (e) => handleDragOver(e, index) : undefined}
+                  onDragLeave={canEdit ? handleDragLeave : undefined}
+                  onDrop={canEdit ? (e) => handleDrop(e, index) : undefined}
+                  className={`px-6 py-4 flex items-center justify-between hover:bg-gray-50 ${canEdit ? 'cursor-move' : ''} transition-colors ${
+                    dragOverIndex === index ? 'bg-green-50 border-t-2 border-green-300' : ''
+                  } ${draggedItem?.id === template.id ? 'opacity-50' : ''}`}
+                >
                 <div className="flex items-center space-x-3">
                   <span className="inline-flex items-center justify-center w-8 h-8 bg-green-100 text-green-800 text-sm font-bold rounded-full">
                     {template.order || index + 1}
@@ -1214,9 +1222,15 @@ const Manager: React.FC<ManagerProps> = ({ templates, addTemplate, updateTemplat
                   </div>
                 </div>
                 <div className="flex-shrink-0 ml-4 space-x-2">
-                  <button onClick={() => handleSelectForEdit(template)} className="text-green-600 hover:text-green-900 text-sm font-medium">Editar</button>
-                  <button onClick={() => handleClone(template)} className="text-blue-600 hover:text-blue-900 text-sm font-medium">Clonar</button>
-                  <button onClick={() => handleDelete(template.id)} className="text-red-600 hover:text-red-900 text-sm font-medium">Excluir</button>
+                  {canEdit ? (
+                    <>
+                      <button onClick={() => handleSelectForEdit(template)} className="text-green-600 hover:text-green-900 text-sm font-medium">Editar</button>
+                      <button onClick={() => handleClone(template)} className="text-blue-600 hover:text-blue-900 text-sm font-medium">Clonar</button>
+                      <button onClick={() => handleDelete(template.id)} className="text-red-600 hover:text-red-900 text-sm font-medium">Excluir</button>
+                    </>
+                  ) : (
+                    <span className="text-xs text-gray-500">Somente leitura</span>
+                  )}
                 </div>
               </li>
             )) : (

@@ -1,13 +1,16 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Template, Atendimento } from './types';
 import useLocalStorage from './hooks/useLocalStorage';
 import { useAuth } from './hooks/useAuth';
 import { useFirebaseTemplates } from './hooks/useFirebaseTemplates';
+import { db } from './firebase/config';
+import { collection, query, orderBy, getDocs } from 'firebase/firestore';
 import Generator from './components/Generator';
 import Manager from './components/Manager';
 import Atendimentos from './components/Atendimentos';
 import LoginModal from './components/LoginModal';
+import UserManagementModal from './components/UserManagementModal';
 import { initialTemplates } from './data/initialData';
 
 type Tab = 'generator' | 'manager' | 'atendimentos';
@@ -17,16 +20,46 @@ const App: React.FC = () => {
   const [atendimentos, setAtendimentos] = useLocalStorage<Atendimento[]>('atendimentos-historico', []);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showFAQModal, setShowFAQModal] = useState(false);
+  const [showUserMgmt, setShowUserMgmt] = useState(false);
   
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated, logout, profile, isManager } = useAuth() as any;
   const { templates, loading, addTemplate, updateTemplate, deleteTemplate } = useFirebaseTemplates(isAuthenticated);
 
+  // Load atendimentos from Firestore for the logged in user
+  useEffect(() => {
+    const loadUserAtendimentos = async () => {
+      if (!user || !user.uid) return;
+      try {
+        const colRef = collection(db, 'users', user.uid, 'atendimentos');
+        const q = query(colRef, orderBy('createdAt', 'desc'));
+        const snap = await getDocs(q);
+        const docs = snap.docs.map(d => {
+          const data: any = d.data();
+          const createdAt = data.createdAt && data.createdAt.toDate ? data.createdAt.toDate().toISOString() : (data.createdAt || new Date().toISOString());
+          return {
+            id: d.id,
+            templateId: data.templateId,
+            templateTitle: data.templateTitle,
+            formData: data.formData || {},
+            generatedText: data.generatedText || '',
+            createdAt
+          } as any;
+        });
+        if (docs.length > 0) {
+          setAtendimentos(docs);
+        }
+      } catch (e) {
+        console.warn('Erro ao carregar atendimentos do Firestore:', e);
+      }
+    };
+
+    loadUserAtendimentos();
+  }, [user]);
+
   const handleManagerTabClick = () => {
-    if (!isAuthenticated) {
-      setShowLoginModal(true);
-    } else {
-      setActiveTab('manager');
-    }
+    // Allow opening the manager for all users but editing actions will be
+    // disabled for non-managers. If not authenticated the UI will be read-only.
+    setActiveTab('manager');
   };
 
   const handleLoginSuccess = () => {
@@ -70,26 +103,33 @@ const App: React.FC = () => {
                         {isAuthenticated && <span className="ml-1 text-xs">🔓</span>}
                     </TabButton>
                 </nav>
-                {/* Botão FAQ colocado à direita do header, próximo ao botão Sair */}
-                <div>
-                  <button
-                    onClick={() => { setActiveTab('generator'); setShowFAQModal(true); }}
-                    title="FAQ"
-                    className="ml-2 px-2 py-1 rounded-md text-sm text-gray-600 hover:bg-gray-200"
-                  >
-                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M12 20a8 8 0 100-16 8 8 0 000 16z" />
-                    </svg>
-                  </button>
-                </div>
-                {isAuthenticated && (
-                    <button
+                {/* FAQ button removed — use ícone de informação no gerador quando necessário */}
+                {isAuthenticated ? (
+                    <div className="flex items-center space-x-3">
+                      {isManager && (
+                        <button title="Gerenciar usuários" onClick={() => setShowUserMgmt(true)} className="text-gray-600 hover:text-gray-800" aria-label="Gerenciar usuários">
+                          {/* Usar SVG estático em /public para inclusão no build */}
+                          <img src="/engrenagem.svg" alt="Gerenciar usuários" className="h-6 w-6" />
+                        </button>
+                      )}
+                      <button
                         onClick={handleLogout}
                         className="text-sm text-gray-600 hover:text-gray-800"
-                    >
+                      >
                         Sair
-                    </button>
+                      </button>
+                    </div>
+                ) : (
+                    <div className="flex items-center">
+                      <button
+                        onClick={() => setShowLoginModal(true)}
+                        className="px-4 py-2 text-sm font-medium rounded-md transition-colors duration-200 text-gray-600 hover:bg-green-100"
+                      >
+                        Login
+                      </button>
+                    </div>
                 )}
+                <UserManagementModal isOpen={!!(isManager && showUserMgmt)} onClose={() => setShowUserMgmt(false)} />
             </div>
         </div>
       </header>
@@ -104,7 +144,7 @@ const App: React.FC = () => {
           />
         )}
         {activeTab === 'atendimentos' && <Atendimentos atendimentos={atendimentos} setAtendimentos={setAtendimentos} templates={templates} />}
-        {activeTab === 'manager' && <Manager templates={templates} addTemplate={addTemplate} updateTemplate={updateTemplate} deleteTemplate={deleteTemplate} />}
+  {activeTab === 'manager' && <Manager templates={templates} addTemplate={addTemplate} updateTemplate={updateTemplate} deleteTemplate={deleteTemplate} isManager={isManager} />}
       </main>
       
       <LoginModal 

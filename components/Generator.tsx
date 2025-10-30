@@ -2,6 +2,9 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Template, TemplateField, Atendimento } from '../types';
 import { ClipboardIcon, CheckIcon } from './icons/ClipboardIcon';
+import { useAuth } from '../hooks/useAuth';
+import { db } from '../firebase/config';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 interface GeneratorProps {
   templates: Template[];
@@ -43,6 +46,8 @@ const Generator: React.FC<GeneratorProps> = ({ templates, atendimentos, setAtend
     return templates.find(t => t.id.toString() === selectedTemplateId) || null;
   }, [selectedTemplateId, templates]);
 
+  // current authenticated user (used to persist atendimentos per-user)
+  const { user } = useAuth() as any;
   // Templates filtrados e ordenados
   const filteredAndSortedTemplates = useMemo(() => {
     return templates
@@ -636,8 +641,7 @@ const Generator: React.FC<GeneratorProps> = ({ templates, atendimentos, setAtend
       }
     });
 
-    const novoAtendimento: Atendimento = {
-      id: Date.now(),
+    const novoAtendimentoPartial: Omit<Atendimento, 'id'> = {
       templateId: selectedTemplate.id,
       templateTitle: selectedTemplate.title,
       formData: formattedFormData,
@@ -646,7 +650,9 @@ const Generator: React.FC<GeneratorProps> = ({ templates, atendimentos, setAtend
       createdAt: new Date().toISOString()
     };
 
-    setAtendimentos(prev => [...prev, novoAtendimento]);
+    // Immediately update UI/local state for responsiveness
+    const localAtendimento: Atendimento = { id: Date.now(), ...novoAtendimentoPartial };
+    setAtendimentos(prev => [...prev, localAtendimento]);
     
     // Reset form
     setSelectedTemplateId('');
@@ -659,6 +665,24 @@ const Generator: React.FC<GeneratorProps> = ({ templates, atendimentos, setAtend
     // Show toast
     setShowSavedToast(true);
     setTimeout(() => setShowSavedToast(false), 3000);
+    // Persist to Firestore per-user (if logged in). We run asyncly and replace the local id
+    // with the Firestore doc id when the write succeeds so future deletes will remove the doc.
+    try {
+      if (user && user.uid) {
+        (async () => {
+          try {
+            const colRef = collection(db, 'users', user.uid, 'atendimentos');
+            const docRef = await addDoc(colRef, { ...novoAtendimentoPartial, syncedAt: serverTimestamp(), createdBy: user.uid });
+            // replace local temporary atendimento id (Date.now()) with Firestore doc id
+            setAtendimentos(prev => prev.map(a => (a.id === localAtendimento.id ? { ...a, id: docRef.id } : a)));
+          } catch (err) {
+            console.warn('Não foi possível salvar atendimento no Firestore:', err);
+          }
+        })();
+      }
+    } catch (e) {
+      console.warn('Erro ao tentar salvar atendimento no Firestore', e);
+    }
   };
 
   const renderField = useCallback((field: TemplateField) => {
@@ -951,8 +975,25 @@ const Generator: React.FC<GeneratorProps> = ({ templates, atendimentos, setAtend
                   setIsDropdownOpen(true);
                 }}
                 onFocus={() => setIsDropdownOpen(true)}
-                className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm rounded-md"
+                className="mt-1 block w-full pl-3 pr-16 py-2 text-base border-gray-300 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm rounded-md"
               />
+              {/* Info icon: small 'i' button placed to the left of the dropdown caret */}
+              <button
+                type="button"
+                title={selectedTemplate ? `Informações do modelo: ${selectedTemplate.title}` : 'Selecione um modelo para ver informações'}
+                onClick={() => {
+                  if (selectedTemplate) setFAQOpen(true);
+                  else alert('Selecione um modelo primeiro para ver informações.');
+                }}
+                className="absolute inset-y-0 right-10 flex items-center pr-3 mt-1 text-gray-500 hover:text-gray-700"
+                aria-label="Informações do modelo"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="16" x2="12" y2="12" />
+                  <line x1="12" y1="8" x2="12.01" y2="8" />
+                </svg>
+              </button>
               <button
                 type="button"
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}

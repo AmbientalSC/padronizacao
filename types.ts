@@ -41,7 +41,7 @@ export interface Template {
 }
 
 export interface Atendimento {
-  id: number;
+  id: string | number;
   templateId: number;
   templateTitle: string;
   formData: { [key: string]: any };
