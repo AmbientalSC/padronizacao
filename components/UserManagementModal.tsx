@@ -48,6 +48,10 @@ const UserManagementModal: React.FC<Props> = ({ isOpen, onClose }) => {
       setMessage('Email é obrigatório');
       return;
     }
+    if (!newDisplayName) {
+      setMessage('Nome (displayName) é obrigatório');
+      return;
+    }
     if (newPassword && newPassword !== newPasswordConfirm) {
       setMessage('As senhas não coincidem');
       return;
@@ -162,7 +166,7 @@ const UserManagementModal: React.FC<Props> = ({ isOpen, onClose }) => {
           {message && <div className="p-2 bg-yellow-100 text-yellow-800 rounded">{message}</div>}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
             <input className="px-2 py-1 border rounded" placeholder="Email" value={newEmail} onChange={e => setNewEmail(e.target.value)} />
-            <input className="px-2 py-1 border rounded" placeholder="Nome" value={newDisplayName} onChange={e => setNewDisplayName(e.target.value)} />
+            <input className="px-2 py-1 border rounded" placeholder="Nome (displayName)" value={newDisplayName} onChange={e => setNewDisplayName(e.target.value)} />
             <select className="px-2 py-1 border rounded" value={newRole} onChange={e => setNewRole(e.target.value as any)}>
               <option value="usuario">Usuário</option>
               <option value="gestor">Gestor</option>

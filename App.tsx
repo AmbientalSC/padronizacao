@@ -11,6 +11,7 @@ import Manager from './components/Manager';
 import Atendimentos from './components/Atendimentos';
 import LoginModal from './components/LoginModal';
 import UserManagementModal from './components/UserManagementModal';
+import ConfirmModal from './components/ConfirmModal';
 import { initialTemplates } from './data/initialData';
 
 type Tab = 'generator' | 'manager' | 'atendimentos';
@@ -21,6 +22,7 @@ const App: React.FC = () => {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showFAQModal, setShowFAQModal] = useState(false);
   const [showUserMgmt, setShowUserMgmt] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   
   const { user, isAuthenticated, logout, profile, isManager } = useAuth() as any;
   const { templates, loading, addTemplate, updateTemplate, deleteTemplate } = useFirebaseTemplates(isAuthenticated);
@@ -89,12 +91,20 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
       <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-            <div className="flex items-center">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center">
+            <div className="flex items-center flex-none">
                 <img src="https://ambiental.sc/wp-content/themes/ambiental-03/favicon.ico" alt="Logo" className="h-10 w-10 rounded-full mr-3"/>
                 <h1 className="text-2xl font-bold text-gray-800">Relação com o usuário</h1>
             </div>
-            <div className="flex items-center space-x-4">
+
+            {/* Centro do header: displayName do usuário autenticado */}
+            <div className="flex-1 text-center">
+              {isAuthenticated ? (
+                <div className="text-sm text-gray-700">{profile?.displayName || user?.displayName || user?.email}</div>
+              ) : null}
+            </div>
+
+            <div className="flex items-center space-x-4 flex-none">
                 <nav className="flex space-x-2 bg-gray-100 p-1 rounded-lg items-center">
                     <TabButton tab="generator">Gerador</TabButton>
                     <TabButton tab="atendimentos">Atendimentos</TabButton>
@@ -113,7 +123,7 @@ const App: React.FC = () => {
                         </button>
                       )}
                       <button
-                        onClick={handleLogout}
+                        onClick={() => setShowLogoutConfirm(true)}
                         className="text-sm text-gray-600 hover:text-gray-800"
                       >
                         Sair
@@ -151,6 +161,16 @@ const App: React.FC = () => {
         isOpen={showLoginModal} 
         onClose={() => setShowLoginModal(false)} 
         onSuccess={handleLoginSuccess}
+      />
+      <ConfirmModal
+        isOpen={showLogoutConfirm}
+        title="Confirmar logout"
+        message="Tem certeza que deseja sair da aplicação?"
+        confirmText="Sair"
+        cancelText="Cancelar"
+        variant="warning"
+        onConfirm={async () => { setShowLogoutConfirm(false); await handleLogout(); }}
+        onCancel={() => setShowLogoutConfirm(false)}
       />
       <footer className="text-center py-4 text-sm text-gray-500">
         <p>&copy; {new Date().getFullYear()} Ambiental Limpeza Urbana e Saneamento LTDA. Todos os direitos reservados.</p>
