@@ -163,18 +163,36 @@ const UserManagementModal: React.FC<Props> = ({ isOpen, onClose }) => {
           <button onClick={onClose} className="text-sm text-gray-600">Fechar</button>
         </div>
         <div className="p-4 space-y-4">
-          {message && <div className="p-2 bg-yellow-100 text-yellow-800 rounded">{message}</div>}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-            <input className="px-2 py-1 border rounded" placeholder="Email" value={newEmail} onChange={e => setNewEmail(e.target.value)} />
-            <input className="px-2 py-1 border rounded" placeholder="Nome (displayName)" value={newDisplayName} onChange={e => setNewDisplayName(e.target.value)} />
-            <select className="px-2 py-1 border rounded" value={newRole} onChange={e => setNewRole(e.target.value as any)}>
-              <option value="usuario">Usuário</option>
-              <option value="gestor">Gestor</option>
-            </select>
-            <input className="px-2 py-1 border rounded" placeholder="Senha (opcional)" value={newPassword} onChange={e => setNewPassword(e.target.value)} type="password" />
-            <input className="px-2 py-1 border rounded" placeholder="Confirmar senha" value={newPasswordConfirm} onChange={e => setNewPasswordConfirm(e.target.value)} type="password" />
-            <div className="md:col-span-3 flex items-center space-x-2">
-              <button onClick={createUser} className="px-3 py-1 bg-green-600 text-white rounded">Criar usuário</button>
+          {message && <div className="p-3 bg-yellow-50 text-yellow-800 rounded border border-yellow-100">{message}</div>}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
+            <div className="md:col-span-2">
+              <label className="text-xs text-gray-500">Email</label>
+              <input className="mt-1 block w-full px-3 py-2 border border-gray-200 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-200" placeholder="Email" value={newEmail} onChange={e => setNewEmail(e.target.value)} />
+            </div>
+            <div>
+              <label className="text-xs text-gray-500">Nome (displayName)</label>
+              <input className="mt-1 block w-full px-3 py-2 border border-gray-200 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-200" placeholder="Nome (displayName)" value={newDisplayName} onChange={e => setNewDisplayName(e.target.value)} />
+            </div>
+            <div>
+              <label className="text-xs text-gray-500">Papel</label>
+              <select className="mt-1 block w-full px-3 py-2 border border-gray-200 rounded-md bg-white text-sm" value={newRole} onChange={e => setNewRole(e.target.value as any)}>
+                <option value="usuario">Usuário</option>
+                <option value="gestor">Gestor</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="text-xs text-gray-500">Senha (opcional)</label>
+              <input className="mt-1 block w-full px-3 py-2 border border-gray-200 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-200" placeholder="Senha (opcional)" value={newPassword} onChange={e => setNewPassword(e.target.value)} type="password" />
+            </div>
+            <div>
+              <label className="text-xs text-gray-500">Confirmar senha</label>
+              <input className="mt-1 block w-full px-3 py-2 border border-gray-200 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-200" placeholder="Confirmar senha" value={newPasswordConfirm} onChange={e => setNewPasswordConfirm(e.target.value)} type="password" />
+            </div>
+            <div className="md:col-span-4 flex items-center justify-between">
+              <div>
+                <button onClick={createUser} className="px-4 py-2 bg-green-600 text-white rounded-md shadow">Criar usuário</button>
+              </div>
               <div className="text-sm text-gray-500">Se funções backend estiverem disponíveis, o usuário será criado no Auth e no Firestore; caso contrário, será criado apenas no Firestore.</div>
             </div>
           </div>
@@ -184,31 +202,31 @@ const UserManagementModal: React.FC<Props> = ({ isOpen, onClose }) => {
             {loading ? <div>Carregando...</div> : (
               <div className="space-y-2">
                 {users.map(u => (
-                  <div key={u.id} className="p-2 border rounded flex items-center justify-between">
-                    <div>
-                      <div className="font-medium">{u.displayName || u.email || u.id}</div>
-                      <div className="text-xs text-gray-500">{u.email}</div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <select value={u.role} onChange={e => changeRole(u, e.target.value)} className="px-2 py-1 border rounded text-sm">
-                        <option value="usuario">Usuário</option>
-                        <option value="gestor">Gestor</option>
-                      </select>
-                      <button onClick={() => toggleActive(u)} className={`px-2 py-1 rounded ${u.active ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
-                        {u.active ? 'Desativar' : 'Ativar'}
-                      </button>
-                      {!editingPasswordUserId || editingPasswordUserId !== u.id ? (
-                        <button onClick={() => { setEditingPasswordUserId(u.id); setEditPasswordValue(''); setEditPasswordConfirm(''); }} className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-sm">Alterar senha</button>
-                      ) : (
-                        <div className="flex items-center space-x-2">
-                          <input type="password" placeholder="Nova senha" value={editPasswordValue} onChange={e => setEditPasswordValue(e.target.value)} className="px-2 py-1 border rounded text-sm" />
-                          <input type="password" placeholder="Confirme" value={editPasswordConfirm} onChange={e => setEditPasswordConfirm(e.target.value)} className="px-2 py-1 border rounded text-sm" />
-                          <button onClick={() => updateUserPassword(u)} className="px-2 py-1 bg-green-600 text-white rounded text-sm">Salvar</button>
-                          <button onClick={() => { setEditingPasswordUserId(null); setEditPasswordValue(''); setEditPasswordConfirm(''); }} className="px-2 py-1 bg-gray-200 rounded text-sm">Cancelar</button>
+                      <div key={u.id} className="p-3 border rounded-md bg-white shadow-sm flex flex-col md:flex-row md:items-center md:justify-between">
+                          <div className="mb-2 md:mb-0">
+                            <div className="font-medium text-gray-800">{u.displayName || u.email || u.id}</div>
+                            <div className="text-xs text-gray-500">{u.email}</div>
+                          </div>
+                          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                            <select value={u.role} onChange={e => changeRole(u, e.target.value)} className="px-3 py-2 border border-gray-200 rounded-md text-sm bg-white min-w-[140px]">
+                              <option value="usuario">Usuário</option>
+                              <option value="gestor">Gestor</option>
+                            </select>
+                            <button onClick={() => toggleActive(u)} className={`px-3 py-2 rounded-md text-sm ${u.active ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+                              {u.active ? 'Desativar' : 'Ativar'}
+                            </button>
+                            {!editingPasswordUserId || editingPasswordUserId !== u.id ? (
+                              <button onClick={() => { setEditingPasswordUserId(u.id); setEditPasswordValue(''); setEditPasswordConfirm(''); }} className="px-3 py-2 border border-blue-100 bg-white text-blue-700 rounded-md text-sm">Alterar senha</button>
+                            ) : (
+                              <div className="flex items-center gap-2">
+                                <input type="password" placeholder="Nova senha" value={editPasswordValue} onChange={e => setEditPasswordValue(e.target.value)} className="w-40 px-3 py-2 border border-gray-200 rounded-md text-sm" />
+                                <input type="password" placeholder="Confirme" value={editPasswordConfirm} onChange={e => setEditPasswordConfirm(e.target.value)} className="w-40 px-3 py-2 border border-gray-200 rounded-md text-sm" />
+                                <button onClick={() => updateUserPassword(u)} className="px-3 py-2 bg-green-600 text-white rounded-md text-sm">Salvar</button>
+                                <button onClick={() => { setEditingPasswordUserId(null); setEditPasswordValue(''); setEditPasswordConfirm(''); }} className="px-3 py-2 bg-gray-100 rounded-md text-sm">Cancelar</button>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      )}
-                    </div>
-                  </div>
                 ))}
               </div>
             )}
