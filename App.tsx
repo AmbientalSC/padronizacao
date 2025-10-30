@@ -124,7 +124,7 @@ const App: React.FC = () => {
                       )}
                       <button
                         onClick={() => setShowLogoutConfirm(true)}
-                        className="text-sm text-gray-600 hover:text-gray-800"
+                        className="px-4 py-2 text-sm font-medium rounded-md transition-colors duration-200 text-gray-600 hover:bg-red-100 hover:text-red-700"
                       >
                         Sair
                       </button>
