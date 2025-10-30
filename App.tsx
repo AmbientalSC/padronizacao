@@ -119,7 +119,7 @@ const App: React.FC = () => {
                       {isManager && (
                         <button title="Gerenciar usuários" onClick={() => setShowUserMgmt(true)} className="text-gray-600 hover:text-gray-800" aria-label="Gerenciar usuários">
                           {/* Usar SVG estático em /public para inclusão no build */}
-                          <img src="/engrenagem.svg" alt="Gerenciar usuários" className="h-6 w-6" />
+                          <img src={`${(import.meta as any).env.BASE_URL}engrenagem.svg`} alt="Gerenciar usuários" className="h-6 w-6" />
                         </button>
                       )}
                       <button
