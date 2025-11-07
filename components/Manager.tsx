@@ -31,7 +31,7 @@ const Manager: React.FC<ManagerProps> = ({ templates, addTemplate, updateTemplat
     isOpen: false,
     title: '',
     message: '',
-    onConfirm: () => {}
+    onConfirm: () => { }
   });
 
   const [activeTab, setActiveTab] = useState<'content' | 'notes' | 'test' | 'organize'>('content');
@@ -63,20 +63,20 @@ const Manager: React.FC<ManagerProps> = ({ templates, addTemplate, updateTemplat
     // Calcula o próximo número da sequência
     const maxOrder = Math.max(0, ...templates.map(t => t.order || 0));
     const nextOrder = maxOrder + 1;
-    
+
     // Use negative timestamp for local-only new templates to avoid colliding with Firestore positive ids
-    setEditingTemplate({ 
-      ...emptyTemplate, 
-      id: -Date.now(), 
+    setEditingTemplate({
+      ...emptyTemplate,
+      id: -Date.now(),
       template_logic: {},
-      order: nextOrder 
+      order: nextOrder
     });
   };
 
   const handleSelectForEdit = (template: Template) => {
     setEditingTemplate(JSON.parse(JSON.stringify(template)));
   };
-  
+
   const handleCancel = () => {
     setEditingTemplate(null);
   };
@@ -190,12 +190,12 @@ const Manager: React.FC<ManagerProps> = ({ templates, addTemplate, updateTemplat
   const handleDrop = async (e: React.DragEvent, targetIndex: number) => {
     e.preventDefault();
     setDragOverIndex(null);
-    
+
     if (!draggedItem) return;
 
     const reorderedTemplates = [...sortedTemplates];
     const draggedIndex = reorderedTemplates.findIndex(t => t.id === draggedItem.id);
-    
+
     if (draggedIndex === targetIndex) return;
 
     // Remove item da posição original
@@ -221,7 +221,7 @@ const Manager: React.FC<ManagerProps> = ({ templates, addTemplate, updateTemplat
       title: 'Excluir Modelo',
       message: 'Tem certeza que deseja excluir este modelo? Esta ação não pode ser desfeita e o modelo será removido permanentemente.',
       onConfirm: async () => {
-  const result = await deleteTemplate(id);
+        const result = await deleteTemplate(id);
         if (result.success) {
           if (editingTemplate?.id === id) {
             setEditingTemplate(null);
@@ -247,8 +247,8 @@ const Manager: React.FC<ManagerProps> = ({ templates, addTemplate, updateTemplat
 
   const handleSave = async () => {
     if (!editingTemplate || !editingTemplate.title) {
-        alert("O título do modelo é obrigatório.");
-        return;
+      alert("O título do modelo é obrigatório.");
+      return;
     }
     // Client-side validation before attempting to persist
     const validateResult = validateTemplate(editingTemplate);
@@ -257,11 +257,11 @@ const Manager: React.FC<ManagerProps> = ({ templates, addTemplate, updateTemplat
       setValidationState({ open: true, errors: validateResult.errors, fieldErrors: validateResult.fieldErrors });
       return;
     }
-  // Determine se é novo: se o id não existe nos templates carregados
-  const exists = templates.some(t => t.id.toString() === editingTemplate.id.toString());
-  const isNewTemplate = !exists;
+    // Determine se é novo: se o id não existe nos templates carregados
+    const exists = templates.some(t => t.id.toString() === editingTemplate.id.toString());
+    const isNewTemplate = !exists;
 
-  if (isNewTemplate) {
+    if (isNewTemplate) {
       const { id, ...templateData } = editingTemplate;
       // Trim options values (remove leading/trailing spaces) before saving
       const sanitized = JSON.parse(JSON.stringify(templateData));
@@ -293,22 +293,22 @@ const Manager: React.FC<ManagerProps> = ({ templates, addTemplate, updateTemplat
         return;
       }
     }
-    
+
     setEditingTemplate(null);
   };
 
   const handleTemplateTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     if (!editingTemplate) return;
     const newTemplateText = e.target.value;
-    
+
     // Update template text immediately for responsive typing
     setEditingTemplate(prev => prev ? { ...prev, template: newTemplateText } : null);
-    
+
     // Debounce the field extraction to avoid creating partial placeholders
     if (templateTextTimerRef.current) {
       clearTimeout(templateTextTimerRef.current);
     }
-    
+
     templateTextTimerRef.current = setTimeout(() => {
       // Extract placeholders only after user stops typing for 500ms
       const placeholders = [...new Set([...newTemplateText.matchAll(/{{(.*?)}}/g)].map(match => match[1]))];
@@ -362,7 +362,7 @@ const Manager: React.FC<ManagerProps> = ({ templates, addTemplate, updateTemplat
       delete updatedFields[index].numberDecimals;
     }
 
-  // debug logs removed after fix
+    // debug logs removed after fix
 
     setEditingTemplate(prev => prev ? { ...prev, fields: updatedFields } : null);
   };
@@ -387,21 +387,21 @@ const Manager: React.FC<ManagerProps> = ({ templates, addTemplate, updateTemplat
   };
 
   const handleFieldConditionChange = (fieldIndex: number, conditionData: Partial<FieldCondition> | null) => {
-      if (!editingTemplate) return;
+    if (!editingTemplate) return;
 
-      const updatedFields = [...editingTemplate.fields];
-      const field = updatedFields[fieldIndex];
+    const updatedFields = [...editingTemplate.fields];
+    const field = updatedFields[fieldIndex];
 
-      if (conditionData === null) {
-          delete field.condition;
-      } else {
-          field.condition = {
-              ...(field.condition || { field: '', value: '' }),
-              ...conditionData
-          };
-      }
-      
-      setEditingTemplate(prev => prev ? { ...prev, fields: updatedFields } : null);
+    if (conditionData === null) {
+      delete field.condition;
+    } else {
+      field.condition = {
+        ...(field.condition || { field: '', value: '' }),
+        ...conditionData
+      };
+    }
+
+    setEditingTemplate(prev => prev ? { ...prev, fields: updatedFields } : null);
   };
 
   // Drag & drop state and handlers for organizing fields
@@ -503,41 +503,41 @@ const Manager: React.FC<ManagerProps> = ({ templates, addTemplate, updateTemplat
     if (!editingTemplate) return;
     const newKey = `nova_logica_${Object.keys(editingTemplate.template_logic || {}).length + 1}`;
     const newLogicItem: TemplateLogicItem = {
-        condition: { field: '', value: '' },
-        text: ''
+      condition: { field: '', value: '' },
+      text: ''
     };
     setEditingTemplate(prev => {
-        if (!prev) return null;
-        return {
-            ...prev,
-            template_logic: {
-                ...(prev.template_logic || {}),
-                [newKey]: newLogicItem
-            }
-        };
+      if (!prev) return null;
+      return {
+        ...prev,
+        template_logic: {
+          ...(prev.template_logic || {}),
+          [newKey]: newLogicItem
+        }
+      };
     });
   };
 
   const handleRemoveTemplateLogic = (key: string) => {
-      if (!editingTemplate) return;
-      setEditingTemplate(prev => {
-          if (!prev || !prev.template_logic) return prev;
-          const newLogic = { ...prev.template_logic };
-          delete newLogic[key];
-          return { ...prev, template_logic: newLogic };
-      });
+    if (!editingTemplate) return;
+    setEditingTemplate(prev => {
+      if (!prev || !prev.template_logic) return prev;
+      const newLogic = { ...prev.template_logic };
+      delete newLogic[key];
+      return { ...prev, template_logic: newLogic };
+    });
   };
 
-  const handleTemplateLogicChange = (oldKey: string, newKey: string, itemData: Partial<TemplateLogicItem> | {condition: Partial<FieldCondition>}) => {
-      if (!editingTemplate) return;
-      // Validate newKey if provided: it must be a non-empty string and not 'true'/'false'
-      if (newKey && (newKey.trim() === '' || newKey === 'true' || newKey === 'false')) {
-        alert('Chave inválida para placeholder. Escolha um nome alfanumérico válido (ex: info_credito).');
-        return;
-      }
+  const handleTemplateLogicChange = (oldKey: string, newKey: string, itemData: Partial<TemplateLogicItem> | { condition: Partial<FieldCondition> }) => {
+    if (!editingTemplate) return;
+    // Validate newKey if provided: it must be a non-empty string and not 'true'/'false'
+    if (newKey && (newKey.trim() === '' || newKey === 'true' || newKey === 'false')) {
+      alert('Chave inválida para placeholder. Escolha um nome alfanumérico válido (ex: info_credito).');
+      return;
+    }
 
-      setEditingTemplate(prev => {
-          if (!prev || !prev.template_logic) return prev;
+    setEditingTemplate(prev => {
+      if (!prev || !prev.template_logic) return prev;
       // Se o usuário tentou renomear para uma chave que já existe, bloquear para evitar sobrescrever
       if (newKey && newKey !== oldKey && prev.template_logic[newKey]) {
         alert('Já existe um bloco com esse placeholder. Escolha outro nome.');
@@ -566,7 +566,7 @@ const Manager: React.FC<ManagerProps> = ({ templates, addTemplate, updateTemplat
       newLogic[newKey || oldKey] = updatedItem as TemplateLogicItem;
 
       return { ...prev, template_logic: newLogic };
-      });
+    });
   };
 
   const renderConditionUI = (
@@ -578,133 +578,133 @@ const Manager: React.FC<ManagerProps> = ({ templates, addTemplate, updateTemplat
     onInjectFieldsChange?: (arr: TemplateField[]) => void
   ) => {
     if (!condition) {
-        return <button onClick={() => onchange({field: '', value: ''})} className="text-sm text-green-600 hover:text-green-800">+ Adicionar condição de visibilidade</button>
+      return <button onClick={() => onchange({ field: '', value: '' })} className="text-sm text-green-600 hover:text-green-800">+ Adicionar condição de visibilidade</button>
     }
-    
+
     const conditionSourceField = fieldSource.find(f => f.name === condition.field);
 
     return (
-        <div className="mt-2 p-3 bg-gray-100 rounded-md border">
-            <div className="flex items-center justify-between">
-                <p className="text-xs font-medium text-gray-600">Condição de Visibilidade</p>
-                <button onClick={() => onchange(null)} className="text-xs text-red-500 hover:text-red-700">Remover</button>
-            </div>
-            <div className="flex items-center space-x-2 mt-2">
-                <span className="text-sm">Exibir se</span>
-                <select 
-                    value={condition.field} 
-                    onChange={e => onchange({ field: e.target.value })} 
-                    className="block w-full px-2 py-1 text-sm border-gray-300 rounded-md"
-                >
-                    <option value="">Selecione o campo...</option>
-                    {fieldSource.map(f => <option key={`${context}-${f.name}`} value={f.name}>{f.label || f.name}</option>)}
-                </select>
-                <span className="text-sm">for</span>
-
-                {!conditionSourceField || conditionSourceField.type === 'text' || conditionSourceField.type === 'number' || conditionSourceField.type === 'date' || conditionSourceField.type === 'email' || conditionSourceField.type === 'textarea' ? (
-                    <input type="text" value={condition.value} onChange={e => onchange({ value: e.target.value })} className="block w-full px-2 py-1 text-sm border-gray-300 rounded-md"/>
-                ) : conditionSourceField.type === 'checkbox' ? (
-                    <select value={String(condition.value)} onChange={e => onchange({ value: e.target.value === 'true' })} className="block w-full px-2 py-1 text-sm border-gray-300 rounded-md">
-                        <option value="true">Marcado</option>
-                        <option value="false">Desmarcado</option>
-                    </select>
-                ) : (conditionSourceField.type === 'select' || conditionSourceField.type === 'multiselect') ? (
-                    <select value={condition.value} onChange={e => onchange({ value: e.target.value })} className="block w-full px-2 py-1 text-sm border-gray-300 rounded-md">
-                        <option value="">Selecione a opção...</option>
-                        {conditionSourceField.options?.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                    </select>
-                ) : null}
-            </div>
-              {/* Injected fields editor (only shown when provided) */}
-              {injectFields && onInjectFieldsChange && (
-                <div className="mt-3 p-3 bg-white rounded border">
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="text-sm font-medium text-gray-700">Campos Injetados (exibidos quando o bloco estiver ativo)</p>
-                    <button onClick={() => onInjectFieldsChange([...(injectFields || []), { name: `injetado_${Date.now()}`, label: 'Novo Campo', type: 'text' } as TemplateField])} className="text-sm text-green-600 hover:text-green-800">+ Adicionar campo</button>
-                  </div>
-                  {(injectFields || []).map((f: TemplateField, idx: number) => (
-                    <div key={f.name || idx} className="grid grid-cols-3 gap-2 items-center mb-2">
-                      <input type="text" value={f.name} onChange={e => {
-                        const copy = JSON.parse(JSON.stringify(injectFields || []));
-                        copy[idx].name = String(e.target.value).replace(/\s+/g, '_');
-                        onInjectFieldsChange(copy);
-                      }} className="px-2 py-1 border rounded font-mono" />
-                      <input type="text" value={f.label} onChange={e => {
-                        const copy = JSON.parse(JSON.stringify(injectFields || []));
-                        copy[idx].label = e.target.value;
-                        onInjectFieldsChange(copy);
-                      }} className="px-2 py-1 border rounded" />
-                      <div>
-                        <select value={f.type} onChange={e => {
-                          const copy = JSON.parse(JSON.stringify(injectFields || []));
-                          const newType = e.target.value;
-                          copy[idx].type = newType;
-                          if (newType !== 'number') delete copy[idx].numberDecimals;
-                          if (newType !== 'select' && newType !== 'multiselect') delete copy[idx].options;
-                          if (newType !== 'date') delete copy[idx].dateFormat;
-                          onInjectFieldsChange(copy);
-                        }} className="px-2 py-1 border rounded w-full">
-                          <option value="text">Texto</option>
-                          <option value="number">Número</option>
-                          <option value="date">Data</option>
-                          <option value="email">Email</option>
-                          <option value="textarea">Área de Texto</option>
-                          <option value="select">Seleção</option>
-                          <option value="multiselect">Multiseleção</option>
-                          <option value="checkbox">Checkbox</option>
-                          <option value="telefone">Telefone</option>
-                          <option value="cpfcnpj">CPF/CNPJ</option>
-                          <option value="endereco">Endereço</option>
-                        </select>
-                        {f.type === 'number' && (
-                          <div className="mt-1">
-                            <label className="block text-xs font-medium text-gray-600">Casas Decimais</label>
-                            <select value={f.numberDecimals ?? ''} onChange={e => {
-                              const copy = JSON.parse(JSON.stringify(injectFields || []));
-                              copy[idx].numberDecimals = e.target.value === '' ? null : Number(e.target.value);
-                              onInjectFieldsChange(copy);
-                            }} className="mt-1 px-2 py-1 border rounded text-sm w-full">
-                              <option value="">Sem casas decimais</option>
-                              <option value="2">2 casas decimais (fixo)</option>
-                            </select>
-                          </div>
-                        )}
-                        {(f.type === 'select' || f.type === 'multiselect') && (
-                          <div className="mt-1">
-                            <label className="block text-xs font-medium text-gray-600">Opções (separadas por vírgula)</label>
-                            <input type="text" value={Array.isArray(f.options) ? f.options.join(',') : (f.options || '')} onChange={e => {
-                              const copy = JSON.parse(JSON.stringify(injectFields || []));
-                              copy[idx].options = String(e.target.value).split(',').map(opt => opt.trim()).filter(opt => opt.length > 0);
-                              onInjectFieldsChange(copy);
-                            }} className="mt-1 block w-full px-2 py-1 text-sm rounded-md border border-gray-300" />
-                          </div>
-                        )}
-                        {f.type === 'date' && (
-                          <div className="mt-1">
-                            <label className="block text-xs font-medium text-gray-600">Formato da Data</label>
-                            <select value={f.dateFormat || 'dd/mm/yyyy'} onChange={e => {
-                              const copy = JSON.parse(JSON.stringify(injectFields || []));
-                              copy[idx].dateFormat = e.target.value;
-                              onInjectFieldsChange(copy);
-                            }} className="mt-1 block w-full pl-2 pr-8 py-1 text-sm border-gray-300 rounded-md">
-                              <option value="dd/mm/yyyy">dd/mm/yyyy</option>
-                              <option value="mm/yyyy">mm/yyyy</option>
-                            </select>
-                          </div>
-                        )}
-                      </div>
-                      <div className="text-right">
-                        <button onClick={() => {
-                          const copy = JSON.parse(JSON.stringify(injectFields || []));
-                          copy.splice(idx, 1);
-                          onInjectFieldsChange(copy);
-                        }} className="text-red-600 text-sm">Remover</button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+      <div className="mt-2 p-3 bg-gray-100 rounded-md border">
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-medium text-gray-600">Condição de Visibilidade</p>
+          <button onClick={() => onchange(null)} className="text-xs text-red-500 hover:text-red-700">Remover</button>
         </div>
+        <div className="flex items-center space-x-2 mt-2">
+          <span className="text-sm">Exibir se</span>
+          <select
+            value={condition.field}
+            onChange={e => onchange({ field: e.target.value })}
+            className="block w-full px-2 py-1 text-sm border-gray-300 rounded-md"
+          >
+            <option value="">Selecione o campo...</option>
+            {fieldSource.map(f => <option key={`${context}-${f.name}`} value={f.name}>{f.label || f.name}</option>)}
+          </select>
+          <span className="text-sm">for</span>
+
+          {!conditionSourceField || conditionSourceField.type === 'text' || conditionSourceField.type === 'number' || conditionSourceField.type === 'date' || conditionSourceField.type === 'email' || conditionSourceField.type === 'textarea' ? (
+            <input type="text" value={condition.value} onChange={e => onchange({ value: e.target.value })} className="block w-full px-2 py-1 text-sm border-gray-300 rounded-md" />
+          ) : conditionSourceField.type === 'checkbox' ? (
+            <select value={String(condition.value)} onChange={e => onchange({ value: e.target.value === 'true' })} className="block w-full px-2 py-1 text-sm border-gray-300 rounded-md">
+              <option value="true">Marcado</option>
+              <option value="false">Desmarcado</option>
+            </select>
+          ) : (conditionSourceField.type === 'select' || conditionSourceField.type === 'multiselect') ? (
+            <select value={condition.value} onChange={e => onchange({ value: e.target.value })} className="block w-full px-2 py-1 text-sm border-gray-300 rounded-md">
+              <option value="">Selecione a opção...</option>
+              {conditionSourceField.options?.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+            </select>
+          ) : null}
+        </div>
+        {/* Injected fields editor (only shown when provided) */}
+        {injectFields && onInjectFieldsChange && (
+          <div className="mt-3 p-3 bg-white rounded border">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-sm font-medium text-gray-700">Campos Injetados (exibidos quando o bloco estiver ativo)</p>
+              <button onClick={() => onInjectFieldsChange([...(injectFields || []), { name: `injetado_${Date.now()}`, label: 'Novo Campo', type: 'text' } as TemplateField])} className="text-sm text-green-600 hover:text-green-800">+ Adicionar campo</button>
+            </div>
+            {(injectFields || []).map((f: TemplateField, idx: number) => (
+              <div key={f.name || idx} className="grid grid-cols-3 gap-2 items-center mb-2">
+                <input type="text" value={f.name} onChange={e => {
+                  const copy = JSON.parse(JSON.stringify(injectFields || []));
+                  copy[idx].name = String(e.target.value).replace(/\s+/g, '_');
+                  onInjectFieldsChange(copy);
+                }} className="px-2 py-1 border rounded font-mono" />
+                <input type="text" value={f.label} onChange={e => {
+                  const copy = JSON.parse(JSON.stringify(injectFields || []));
+                  copy[idx].label = e.target.value;
+                  onInjectFieldsChange(copy);
+                }} className="px-2 py-1 border rounded" />
+                <div>
+                  <select value={f.type} onChange={e => {
+                    const copy = JSON.parse(JSON.stringify(injectFields || []));
+                    const newType = e.target.value;
+                    copy[idx].type = newType;
+                    if (newType !== 'number') delete copy[idx].numberDecimals;
+                    if (newType !== 'select' && newType !== 'multiselect') delete copy[idx].options;
+                    if (newType !== 'date') delete copy[idx].dateFormat;
+                    onInjectFieldsChange(copy);
+                  }} className="px-2 py-1 border rounded w-full">
+                    <option value="text">Texto</option>
+                    <option value="number">Número</option>
+                    <option value="date">Data</option>
+                    <option value="email">Email</option>
+                    <option value="textarea">Área de Texto</option>
+                    <option value="select">Seleção</option>
+                    <option value="multiselect">Multiseleção</option>
+                    <option value="checkbox">Checkbox</option>
+                    <option value="telefone">Telefone</option>
+                    <option value="cpfcnpj">CPF/CNPJ</option>
+                    <option value="endereco">Endereço</option>
+                  </select>
+                  {f.type === 'number' && (
+                    <div className="mt-1">
+                      <label className="block text-xs font-medium text-gray-600">Casas Decimais</label>
+                      <select value={f.numberDecimals ?? ''} onChange={e => {
+                        const copy = JSON.parse(JSON.stringify(injectFields || []));
+                        copy[idx].numberDecimals = e.target.value === '' ? null : Number(e.target.value);
+                        onInjectFieldsChange(copy);
+                      }} className="mt-1 px-2 py-1 border rounded text-sm w-full">
+                        <option value="">Sem casas decimais</option>
+                        <option value="2">2 casas decimais (fixo)</option>
+                      </select>
+                    </div>
+                  )}
+                  {(f.type === 'select' || f.type === 'multiselect') && (
+                    <div className="mt-1">
+                      <label className="block text-xs font-medium text-gray-600">Opções (separadas por vírgula)</label>
+                      <input type="text" value={Array.isArray(f.options) ? f.options.join(',') : (f.options || '')} onChange={e => {
+                        const copy = JSON.parse(JSON.stringify(injectFields || []));
+                        copy[idx].options = String(e.target.value).split(',').map(opt => opt.trim()).filter(opt => opt.length > 0);
+                        onInjectFieldsChange(copy);
+                      }} className="mt-1 block w-full px-2 py-1 text-sm rounded-md border border-gray-300" />
+                    </div>
+                  )}
+                  {f.type === 'date' && (
+                    <div className="mt-1">
+                      <label className="block text-xs font-medium text-gray-600">Formato da Data</label>
+                      <select value={f.dateFormat || 'dd/mm/yyyy'} onChange={e => {
+                        const copy = JSON.parse(JSON.stringify(injectFields || []));
+                        copy[idx].dateFormat = e.target.value;
+                        onInjectFieldsChange(copy);
+                      }} className="mt-1 block w-full pl-2 pr-8 py-1 text-sm border-gray-300 rounded-md">
+                        <option value="dd/mm/yyyy">dd/mm/yyyy</option>
+                        <option value="mm/yyyy">mm/yyyy</option>
+                      </select>
+                    </div>
+                  )}
+                </div>
+                <div className="text-right">
+                  <button onClick={() => {
+                    const copy = JSON.parse(JSON.stringify(injectFields || []));
+                    copy.splice(idx, 1);
+                    onInjectFieldsChange(copy);
+                  }} className="text-red-600 text-sm">Remover</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     )
   }
 
@@ -753,7 +753,7 @@ const Manager: React.FC<ManagerProps> = ({ templates, addTemplate, updateTemplat
           const formVal = testFormData[condField];
           const a = formVal == null ? '' : String(formVal).trim();
           const b = condVal == null ? '' : String(condVal).trim();
-          const sourceField = editingTemplate.fields.find((f:any) => f.name === condField);
+          const sourceField = editingTemplate.fields.find((f: any) => f.name === condField);
           let isActive = false;
           if (sourceField && sourceField.type === 'checkbox') {
             if (condVal != null) {
@@ -786,115 +786,115 @@ const Manager: React.FC<ManagerProps> = ({ templates, addTemplate, updateTemplat
     const allFieldsForLogic = editingTemplate.fields;
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center p-4 z-50">
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-                <div className="p-6 sticky top-0 bg-white border-b z-10">
-                    <h2 className="text-2xl font-bold text-gray-800">{editingTemplate.id < 0 ? 'Criar Novo Modelo' : 'Editar Modelo'}</h2>
-                </div>
-        <div className="p-6 space-y-6">
-          <div className="flex items-center space-x-4 mb-4">
-            <button onClick={() => setActiveTab('content')} className={`px-3 py-1 text-sm font-medium rounded ${activeTab === 'content' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700'}`}>Conteúdo</button>
-            <button onClick={() => setActiveTab('organize')} className={`px-3 py-1 text-sm font-medium rounded ${activeTab === 'organize' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700'}`}>Organizar Campos</button>
-            <button onClick={() => setActiveTab('notes')} className={`px-3 py-1 text-sm font-medium rounded ${activeTab === 'notes' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700'}`}>Anotações</button>
-            <button onClick={() => setActiveTab('test')} className={`px-3 py-1 text-sm font-medium rounded ${activeTab === 'test' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`}>Testar Modelo</button>
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center p-4 z-50">
+        <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+          <div className="p-6 sticky top-0 bg-white border-b z-10">
+            <h2 className="text-2xl font-bold text-gray-800">{editingTemplate.id < 0 ? 'Criar Novo Modelo' : 'Editar Modelo'}</h2>
           </div>
-      {activeTab === 'test' && (
-            <div>
-              <h3 className="text-lg font-semibold text-gray-700 mt-4 mb-2">Testar Modelo</h3>
-              <p className="text-sm text-gray-500 mb-4">Preencha valores de exemplo para ver como o template ficará ao gerar o texto.</p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                {(editingTemplate.fields || []).map(f => (
-                  <div key={`test-${f.name}`}>
-                    <label className="block text-xs font-medium text-gray-600">{f.label || f.name}</label>
-                    <input type="text" className="mt-1 block w-full px-2 py-1 border rounded" value={testFormData[f.name] || ''} onChange={e => setTestFormData(prev => ({ ...prev, [f.name]: e.target.value }))} />
-                  </div>
-                ))}
-              </div>
-              <div className="bg-white p-4 rounded border">
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="text-sm font-medium">Preview de Teste</h4>
-                  <button onClick={() => {
-                    // simple copy
-                    navigator.clipboard.writeText(generateTestPreview());
-                  }} className="px-3 py-1 text-sm bg-green-600 text-white rounded">Copiar</button>
-                </div>
-                <textarea readOnly value={generateTestPreview()} className="w-full min-h-[10rem] p-2 border rounded font-mono text-sm" />
-              </div>
+          <div className="p-6 space-y-6">
+            <div className="flex items-center space-x-4 mb-4">
+              <button onClick={() => setActiveTab('content')} className={`px-3 py-1 text-sm font-medium rounded ${activeTab === 'content' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700'}`}>Conteúdo</button>
+              <button onClick={() => setActiveTab('organize')} className={`px-3 py-1 text-sm font-medium rounded ${activeTab === 'organize' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700'}`}>Organizar Campos</button>
+              <button onClick={() => setActiveTab('notes')} className={`px-3 py-1 text-sm font-medium rounded ${activeTab === 'notes' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700'}`}>Anotações</button>
+              <button onClick={() => setActiveTab('test')} className={`px-3 py-1 text-sm font-medium rounded ${activeTab === 'test' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`}>Testar Modelo</button>
             </div>
-          )}
-
-          {activeTab === 'content' ? (
-            <>
+            {activeTab === 'test' && (
               <div>
-                <label className="block text-sm font-medium text-gray-700">Título do Modelo</label>
-                <input
-                  type="text"
-                  placeholder="Ex: Atendimento para 2ª via do carnê"
-                  value={editingTemplate.title}
-                  onChange={e => setEditingTemplate(prev => prev ? { ...prev, title: e.target.value } : null)}
-                  className={`mt-1 block w-full px-3 py-2 bg-white rounded-md shadow-sm ${validationState.fieldErrors['title'] ? 'border-red-500 border' : 'border border-gray-300'}`}
-                />
-                {validationState.fieldErrors['title'] && (
-                  <p className="text-xs text-red-600 mt-1">{validationState.fieldErrors['title'].join('; ')}</p>
-                )}
+                <h3 className="text-lg font-semibold text-gray-700 mt-4 mb-2">Testar Modelo</h3>
+                <p className="text-sm text-gray-500 mb-4">Preencha valores de exemplo para ver como o template ficará ao gerar o texto.</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  {(editingTemplate.fields || []).map(f => (
+                    <div key={`test-${f.name}`}>
+                      <label className="block text-xs font-medium text-gray-600">{f.label || f.name}</label>
+                      <input type="text" className="mt-1 block w-full px-2 py-1 border rounded" value={testFormData[f.name] || ''} onChange={e => setTestFormData(prev => ({ ...prev, [f.name]: e.target.value }))} />
+                    </div>
+                  ))}
+                </div>
+                <div className="bg-white p-4 rounded border">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-sm font-medium">Preview de Teste</h4>
+                    <button onClick={() => {
+                      // simple copy
+                      navigator.clipboard.writeText(generateTestPreview());
+                    }} className="px-3 py-1 text-sm bg-green-600 text-white rounded">Copiar</button>
+                  </div>
+                  <textarea readOnly value={generateTestPreview()} className="w-full min-h-[10rem] p-2 border rounded font-mono text-sm" />
+                </div>
               </div>
+            )}
 
-              {/* FIX: Wrapped string with `{{...}}` in a JSX expression to prevent parsing errors. */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700">{'Template de Texto (use `{{placeholder}}`)'}</label>
-                <textarea
-                  rows={6}
-                  placeholder="Ex: O SR. {{nome}} ({{vinculo}}) compareceu para... {{info_credito}}"
-                  value={editingTemplate.template}
-                  onChange={handleTemplateTextChange}
-                  className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm font-mono"
-                />
-              </div>
+            {activeTab === 'content' ? (
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Título do Modelo</label>
+                  <input
+                    type="text"
+                    placeholder="Ex: Atendimento para 2ª via do carnê"
+                    value={editingTemplate.title}
+                    onChange={e => setEditingTemplate(prev => prev ? { ...prev, title: e.target.value } : null)}
+                    className={`mt-1 block w-full px-3 py-2 bg-white rounded-md shadow-sm ${validationState.fieldErrors['title'] ? 'border-red-500 border' : 'border border-gray-300'}`}
+                  />
+                  {validationState.fieldErrors['title'] && (
+                    <p className="text-xs text-red-600 mt-1">{validationState.fieldErrors['title'].join('; ')}</p>
+                  )}
+                </div>
 
-              <div>
-                <h3 className="text-lg font-semibold text-gray-700 mt-6 border-b pb-2 mb-4">Configuração dos Campos do Formulário</h3>
-                {editingTemplate.fields.length > 0 ? (
-                  <div className="space-y-6">
-                    {editingTemplate.fields.map((field, index) => (
-                      <div key={field.name || index} className="p-4 border rounded-md bg-gray-50">
-                        <p className="font-semibold font-mono text-green-700 mb-2">{`{{${field.name}}}`}</p>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <label className="block text-xs font-medium text-gray-600">Label do Campo</label>
-                            <div className="flex items-center space-x-2">
-                              <input type="text" value={field.label} onChange={e => handleFieldChange(index, { label: e.target.value })} className={`mt-1 block w-full px-2 py-1 text-sm rounded-md ${validationState.fieldErrors[`field:${field.name || index}`] ? 'border-red-500 border' : 'border border-gray-300'}`}/>
-                              <button type="button" onClick={() => handleRemoveLabelByName(field.name)} className="mt-1 text-xs text-red-500 hover:text-red-700">Remover</button>
-                            </div>
-                            {validationState.fieldErrors[`field:${field.name || index}`] && (
-                              <p className="text-xs text-red-600 mt-1">{validationState.fieldErrors[`field:${field.name || index}`].join('; ')}</p>
-                            )}
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-gray-600">Tipo de Campo</label>
-                            <select value={field.type} onChange={e => handleFieldChange(index, { type: e.target.value as TemplateField['type'] })} className="mt-1 block w-full pl-2 pr-8 py-1 text-sm border-gray-300 rounded-md">
-                              <option value="text">Texto</option>
-                              <option value="number">Número</option>
-                              <option value="date">Data</option>
-                              <option value="email">Email</option>
-                              <option value="textarea">Área de Texto</option>
-                              <option value="select">Seleção</option>
-                              <option value="aviso">AVISO</option>
-                              <option value="multiselect">Multiseleção</option>
-                              <option value="checkbox">Checkbox</option>
-                              <option value="telefone">Telefone</option>
-                              <option value="cpfcnpj">CPF/CNPJ</option>
-                              <option value="endereco">Endereço</option>
-                            </select>
-                            {field.type === 'date' && (
-                              <div className="mt-2">
-                                <label className="block text-xs font-medium text-gray-600">Formato da Data</label>
-                                <select value={field.dateFormat || 'dd/mm/yyyy'} onChange={e => handleFieldChange(index, { dateFormat: e.target.value as any })} className="mt-1 block w-full pl-2 pr-8 py-1 text-sm border-gray-300 rounded-md">
-                                  <option value="dd/mm/yyyy">dd/mm/yyyy</option>
-                                  <option value="mm/yyyy">mm/yyyy</option>
-                                </select>
-                                <p className="text-xs text-gray-500 mt-1">Escolha entre data completa (dia/mês/ano) ou apenas mês/ano.</p>
+                {/* FIX: Wrapped string with `{{...}}` in a JSX expression to prevent parsing errors. */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">{'Template de Texto (use `{{placeholder}}`)'}</label>
+                  <textarea
+                    rows={6}
+                    placeholder="Ex: O SR. {{nome}} ({{vinculo}}) compareceu para... {{info_credito}}"
+                    value={editingTemplate.template}
+                    onChange={handleTemplateTextChange}
+                    className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm font-mono"
+                  />
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-700 mt-6 border-b pb-2 mb-4">Configuração dos Campos do Formulário</h3>
+                  {editingTemplate.fields.length > 0 ? (
+                    <div className="space-y-6">
+                      {editingTemplate.fields.map((field, index) => (
+                        <div key={field.name || index} className="p-4 border rounded-md bg-gray-50">
+                          <p className="font-semibold font-mono text-green-700 mb-2">{`{{${field.name}}}`}</p>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-xs font-medium text-gray-600">Label do Campo</label>
+                              <div className="flex items-center space-x-2">
+                                <input type="text" value={field.label} onChange={e => handleFieldChange(index, { label: e.target.value })} className={`mt-1 block w-full px-2 py-1 text-sm rounded-md ${validationState.fieldErrors[`field:${field.name || index}`] ? 'border-red-500 border' : 'border border-gray-300'}`} />
+                                <button type="button" onClick={() => handleRemoveLabelByName(field.name)} className="mt-1 text-xs text-red-500 hover:text-red-700">Remover</button>
                               </div>
-                            )}
+                              {validationState.fieldErrors[`field:${field.name || index}`] && (
+                                <p className="text-xs text-red-600 mt-1">{validationState.fieldErrors[`field:${field.name || index}`].join('; ')}</p>
+                              )}
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-gray-600">Tipo de Campo</label>
+                              <select value={field.type} onChange={e => handleFieldChange(index, { type: e.target.value as TemplateField['type'] })} className="mt-1 block w-full pl-2 pr-8 py-1 text-sm border-gray-300 rounded-md">
+                                <option value="text">Texto</option>
+                                <option value="number">Número</option>
+                                <option value="date">Data</option>
+                                <option value="email">Email</option>
+                                <option value="textarea">Área de Texto</option>
+                                <option value="select">Seleção</option>
+                                <option value="aviso">AVISO</option>
+                                <option value="multiselect">Multiseleção</option>
+                                <option value="checkbox">Checkbox</option>
+                                <option value="telefone">Telefone</option>
+                                <option value="cpfcnpj">CPF/CNPJ</option>
+                                <option value="endereco">Endereço</option>
+                              </select>
+                              {field.type === 'date' && (
+                                <div className="mt-2">
+                                  <label className="block text-xs font-medium text-gray-600">Formato da Data</label>
+                                  <select value={field.dateFormat || 'dd/mm/yyyy'} onChange={e => handleFieldChange(index, { dateFormat: e.target.value as any })} className="mt-1 block w-full pl-2 pr-8 py-1 text-sm border-gray-300 rounded-md">
+                                    <option value="dd/mm/yyyy">dd/mm/yyyy</option>
+                                    <option value="mm/yyyy">mm/yyyy</option>
+                                  </select>
+                                  <p className="text-xs text-gray-500 mt-1">Escolha entre data completa (dia/mês/ano) ou apenas mês/ano.</p>
+                                </div>
+                              )}
                               {field.type === 'number' && (
                                 <div className="mt-2">
                                   <label className="block text-xs font-medium text-gray-600">Casas Decimais</label>
@@ -909,56 +909,56 @@ const Manager: React.FC<ManagerProps> = ({ templates, addTemplate, updateTemplat
                                   <p className="text-xs text-gray-500 mt-1">Escolha se este campo deve armazenar um valor com casas decimais fixas.</p>
                                 </div>
                               )}
-                          </div>
-                          {(field.type === 'select' || field.type === 'multiselect') && (
-                            <div className="md:col-span-2">
-                              <label className="block text-xs font-medium text-gray-600">Opções (separadas por vírgula)</label>
-                              <input
-                                type="text"
-                                value={field.options?.join(',') || ''}
-                                onChange={e => {
-                                  // Split by comma and trim each option to remove leading/trailing spaces
-                                  handleFieldChange(index, { options: e.target.value.split(',').map(opt => opt.trim()).filter(opt => opt.length > 0) });
-                                }}
-                                className={`mt-1 block w-full px-2 py-1 text-sm rounded-md ${validationState.fieldErrors[`field:${field.name || index}`] ? 'border-red-500 border' : 'border border-gray-300'}`}
-                              />
-                              {validationState.fieldErrors[`field:${field.name || index}`] && (
-                                <p className="text-xs text-red-600 mt-1">{validationState.fieldErrors[`field:${field.name || index}`].join('; ')}</p>
-                              )}
                             </div>
-                          )}
+                            {(field.type === 'select' || field.type === 'multiselect') && (
+                              <div className="md:col-span-2">
+                                <label className="block text-xs font-medium text-gray-600">Opções (separadas por vírgula)</label>
+                                <input
+                                  type="text"
+                                  value={field.options?.join(',') || ''}
+                                  onChange={e => {
+                                    // Split by comma and trim each option to remove leading/trailing spaces
+                                    handleFieldChange(index, { options: e.target.value.split(',').map(opt => opt.trim()).filter(opt => opt.length > 0) });
+                                  }}
+                                  className={`mt-1 block w-full px-2 py-1 text-sm rounded-md ${validationState.fieldErrors[`field:${field.name || index}`] ? 'border-red-500 border' : 'border border-gray-300'}`}
+                                />
+                                {validationState.fieldErrors[`field:${field.name || index}`] && (
+                                  <p className="text-xs text-red-600 mt-1">{validationState.fieldErrors[`field:${field.name || index}`].join('; ')}</p>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                          {renderConditionUI(field.condition, (data) => handleFieldConditionChange(index, data), otherFields.filter(f => f.name !== field.name), `field-${index}`)}
                         </div>
-                        {renderConditionUI(field.condition, (data) => handleFieldConditionChange(index, data), otherFields.filter(f => f.name !== field.name), `field-${index}`)}
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm text-gray-500">{'Nenhum campo de formulário detectado no template. Placeholders como `{{nome}}` se tornarão campos.'}</p>
-                )}
-              </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500">{'Nenhum campo de formulário detectado no template. Placeholders como `{{nome}}` se tornarão campos.'}</p>
+                  )}
+                </div>
 
-              <div>
-                <h3 className="text-lg font-semibold text-gray-700 mt-6 border-b pb-2 mb-4">Blocos de Texto Condicionais</h3>
-                <div className="space-y-4">
-                  {editingTemplate.template_logic && Object.entries(editingTemplate.template_logic).map(([key, item]) => (
-                    <div key={key} className="p-4 border rounded-md bg-blue-50">
-                      <div className="flex justify-end">
-                        <button onClick={() => handleRemoveTemplateLogic(key)} className="text-xs text-red-500 hover:text-red-700">Remover Bloco</button>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-xs font-medium text-gray-600">Placeholder a Substituir</label>
-                          <input type="text" defaultValue={key} onBlur={e => handleTemplateLogicChange(key, e.target.value, {})} className={`mt-1 block w-full px-2 py-1 text-sm rounded-md font-mono ${validationState.fieldErrors[`logic:${key}`] ? 'border-red-500 border' : 'border border-gray-300'}`} placeholder="ex: info_credito"/>
-                          {validationState.fieldErrors[`logic:${key}`] && (
-                            <p className="text-xs text-red-600 mt-1">{validationState.fieldErrors[`logic:${key}`].join('; ')}</p>
-                          )}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-700 mt-6 border-b pb-2 mb-4">Blocos de Texto Condicionais</h3>
+                  <div className="space-y-4">
+                    {editingTemplate.template_logic && Object.entries(editingTemplate.template_logic).map(([key, item]) => (
+                      <div key={key} className="p-4 border rounded-md bg-blue-50">
+                        <div className="flex justify-end">
+                          <button onClick={() => handleRemoveTemplateLogic(key)} className="text-xs text-red-500 hover:text-red-700">Remover Bloco</button>
                         </div>
-                        <div className="md:col-span-2">
-                          <label className="block text-xs font-medium text-gray-600">Texto a ser Inserido</label>
-                            <textarea value={(item as TemplateLogicItem).text} onChange={e => handleTemplateLogicChange(key, key, {text: e.target.value})} className="mt-1 block w-full px-2 py-1 text-sm border-gray-300 rounded-md font-mono" rows={3}></textarea>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-xs font-medium text-gray-600">Placeholder a Substituir</label>
+                            <input type="text" defaultValue={key} onBlur={e => handleTemplateLogicChange(key, e.target.value, {})} className={`mt-1 block w-full px-2 py-1 text-sm rounded-md font-mono ${validationState.fieldErrors[`logic:${key}`] ? 'border-red-500 border' : 'border border-gray-300'}`} placeholder="ex: info_credito" />
+                            {validationState.fieldErrors[`logic:${key}`] && (
+                              <p className="text-xs text-red-600 mt-1">{validationState.fieldErrors[`logic:${key}`].join('; ')}</p>
+                            )}
+                          </div>
+                          <div className="md:col-span-2">
+                            <label className="block text-xs font-medium text-gray-600">Texto a ser Inserido</label>
+                            <textarea value={(item as TemplateLogicItem).text} onChange={e => handleTemplateLogicChange(key, key, { text: e.target.value })} className="mt-1 block w-full px-2 py-1 text-sm border-gray-300 rounded-md font-mono" rows={3}></textarea>
+                          </div>
                         </div>
-                      </div>
-                        {renderConditionUI((item as TemplateLogicItem).condition, (data) => handleTemplateLogicChange(key, key, {condition: data || {field: '', value: ''}}), allFieldsForLogic, `logic-${key}`)}
+                        {renderConditionUI((item as TemplateLogicItem).condition, (data) => handleTemplateLogicChange(key, key, { condition: data || { field: '', value: '' } }), allFieldsForLogic, `logic-${key}`)}
                         {/* Injected fields UI */}
                         <div className="mt-3 p-3 bg-white rounded border">
                           <div className="flex items-center justify-between mb-2">
@@ -1074,103 +1074,103 @@ const Manager: React.FC<ManagerProps> = ({ templates, addTemplate, updateTemplat
                             </div>
                           ))}
                         </div>
-                    </div>
-                  ))}
-                  <button onClick={handleAddTemplateLogic} className="text-sm text-green-600 hover:text-green-800">+ Adicionar bloco de texto condicional</button>
-                </div>
-              </div>
-            </>
-          ) : activeTab === 'organize' ? (
-            <>
-              <div>
-                <h3 className="text-lg font-semibold text-gray-700 mt-4 mb-2">Organizar Campos</h3>
-                <p className="text-sm text-gray-500 mb-4">Arraste ou use os botões para ajustar a sequência dos campos como aparecerão no formulário gerado.</p>
-                <div className="space-y-2">
-                  {(() => {
-                    // Exclude injected fields (they are shown only when logic is active).
-                    const injectedNames = new Set<string>();
-                    if (editingTemplate.template_logic) {
-                      Object.values(editingTemplate.template_logic).forEach((li: any) => {
-                        if (Array.isArray(li.injectFields)) li.injectFields.forEach((f: any) => injectedNames.add(f.name));
-                      });
-                    }
-                    const baseFields = (editingTemplate.fields || []).filter(f => !injectedNames.has(f.name));
-                    if (baseFields.length === 0) return <p className="text-sm text-gray-500">Nenhum campo para organizar.</p>;
-                    return baseFields.map((f: any, idx: number) => {
-                      const isDragOver = dragOverFieldName === f.name;
-                      return (
-                        <div
-                          key={f.name}
-                          draggable
-                          onDragStart={(e) => handleFieldDragStart(e, f.name)}
-                          onDragOver={(e) => handleFieldDragOver(e, f.name)}
-                          onDrop={(e) => handleFieldDrop(e, f.name)}
-                          onDragLeave={handleFieldDragLeave}
-                          className={`flex items-center justify-between p-3 border rounded ${isDragOver ? 'bg-green-50 border-t-2 border-green-300' : 'bg-gray-50'}`}
-                        >
-                          <div>
-                            <p className="font-mono text-sm text-green-700">{`{{${f.name}}}`}</p>
-                            <p className="text-sm text-gray-700">{f.label || '(sem label)'}</p>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <span className="text-xs text-gray-500 italic">Arraste para reordenar</span>
-                          </div>
-                        </div>
-                      );
-                    });
-                  })()}
-                </div>
-                <p className="text-xs text-gray-500 mt-3">A ordem será salva quando você clicar em <strong>Salvar Modelo</strong>.</p>
-              </div>
-            </>
-          ) : (
-            <>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Anotações do Modelo</label>
-                <textarea
-                  rows={6}
-                  placeholder="Anotações internas, dicas de preenchimento..."
-                  value={editingTemplate.notes || ''}
-                  onChange={e => setEditingTemplate(prev => prev ? { ...prev, notes: e.target.value } : null)}
-                  className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">FAQ / Perguntas Frequentes</label>
-                <textarea
-                  rows={6}
-                  placeholder="Perguntas e respostas frequentes relacionadas a este modelo..."
-                  value={editingTemplate.faq || ''}
-                  onChange={e => setEditingTemplate(prev => prev ? { ...prev, faq: e.target.value } : null)}
-                  className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm"
-                />
-              </div>
-            </>
-          )}
-        </div>
-                {/* Validation modal */}
-                {validationState.open && (
-                  <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg shadow-lg w-full max-w-2xl p-6">
-                      <h3 className="text-lg font-semibold text-gray-800">Erros de Validação</h3>
-                      <p className="text-sm text-gray-600 mt-2">Corrija os itens indicados antes de salvar.</p>
-                      <ul className="mt-4 list-disc list-inside max-h-48 overflow-auto text-sm text-red-700">
-                        {validationState.errors.map((err, i) => <li key={i}>{err}</li>)}
-                      </ul>
-                      <div className="mt-4 flex justify-end">
-                        <button onClick={() => setValidationState({ open: false, errors: [], fieldErrors: {} })} className="px-3 py-2 bg-green-600 text-white rounded">Fechar</button>
                       </div>
-                    </div>
+                    ))}
+                    <button onClick={handleAddTemplateLogic} className="text-sm text-green-600 hover:text-green-800">+ Adicionar bloco de texto condicional</button>
                   </div>
-                )}
-                <div className="px-6 py-4 bg-gray-50 border-t sticky bottom-0 z-10">
-                    <div className="flex justify-end space-x-3">
-                        <button onClick={handleCancel} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">Cancelar</button>
-                        <button onClick={handleSave} className="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700">Salvar Modelo</button>
-                    </div>
                 </div>
+              </>
+            ) : activeTab === 'organize' ? (
+              <>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-700 mt-4 mb-2">Organizar Campos</h3>
+                  <p className="text-sm text-gray-500 mb-4">Arraste ou use os botões para ajustar a sequência dos campos como aparecerão no formulário gerado.</p>
+                  <div className="space-y-2">
+                    {(() => {
+                      // Exclude injected fields (they are shown only when logic is active).
+                      const injectedNames = new Set<string>();
+                      if (editingTemplate.template_logic) {
+                        Object.values(editingTemplate.template_logic).forEach((li: any) => {
+                          if (Array.isArray(li.injectFields)) li.injectFields.forEach((f: any) => injectedNames.add(f.name));
+                        });
+                      }
+                      const baseFields = (editingTemplate.fields || []).filter(f => !injectedNames.has(f.name));
+                      if (baseFields.length === 0) return <p className="text-sm text-gray-500">Nenhum campo para organizar.</p>;
+                      return baseFields.map((f: any, idx: number) => {
+                        const isDragOver = dragOverFieldName === f.name;
+                        return (
+                          <div
+                            key={f.name}
+                            draggable
+                            onDragStart={(e) => handleFieldDragStart(e, f.name)}
+                            onDragOver={(e) => handleFieldDragOver(e, f.name)}
+                            onDrop={(e) => handleFieldDrop(e, f.name)}
+                            onDragLeave={handleFieldDragLeave}
+                            className={`flex items-center justify-between p-3 border rounded ${isDragOver ? 'bg-green-50 border-t-2 border-green-300' : 'bg-gray-50'}`}
+                          >
+                            <div>
+                              <p className="font-mono text-sm text-green-700">{`{{${f.name}}}`}</p>
+                              <p className="text-sm text-gray-700">{f.label || '(sem label)'}</p>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <span className="text-xs text-gray-500 italic">Arraste para reordenar</span>
+                            </div>
+                          </div>
+                        );
+                      });
+                    })()}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-3">A ordem será salva quando você clicar em <strong>Salvar Modelo</strong>.</p>
+                </div>
+              </>
+            ) : (
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Anotações do Modelo</label>
+                  <textarea
+                    rows={6}
+                    placeholder="Anotações internas, dicas de preenchimento..."
+                    value={editingTemplate.notes || ''}
+                    onChange={e => setEditingTemplate(prev => prev ? { ...prev, notes: e.target.value } : null)}
+                    className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">FAQ / Perguntas Frequentes</label>
+                  <textarea
+                    rows={6}
+                    placeholder="Perguntas e respostas frequentes relacionadas a este modelo..."
+                    value={editingTemplate.faq || ''}
+                    onChange={e => setEditingTemplate(prev => prev ? { ...prev, faq: e.target.value } : null)}
+                    className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm"
+                  />
+                </div>
+              </>
+            )}
+          </div>
+          {/* Validation modal */}
+          {validationState.open && (
+            <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+              <div className="bg-white rounded-lg shadow-lg w-full max-w-2xl p-6">
+                <h3 className="text-lg font-semibold text-gray-800">Erros de Validação</h3>
+                <p className="text-sm text-gray-600 mt-2">Corrija os itens indicados antes de salvar.</p>
+                <ul className="mt-4 list-disc list-inside max-h-48 overflow-auto text-sm text-red-700">
+                  {validationState.errors.map((err, i) => <li key={i}>{err}</li>)}
+                </ul>
+                <div className="mt-4 flex justify-end">
+                  <button onClick={() => setValidationState({ open: false, errors: [], fieldErrors: {} })} className="px-3 py-2 bg-green-600 text-white rounded">Fechar</button>
+                </div>
+              </div>
             </div>
+          )}
+          <div className="px-6 py-4 bg-gray-50 border-t sticky bottom-0 z-10">
+            <div className="flex justify-end space-x-3">
+              <button onClick={handleCancel} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">Cancelar</button>
+              <button onClick={handleSave} className="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700">Salvar Modelo</button>
+            </div>
+          </div>
         </div>
+      </div>
     );
   };
 
@@ -1189,7 +1189,7 @@ const Manager: React.FC<ManagerProps> = ({ templates, addTemplate, updateTemplat
             </button>
           )}
         </div>
-        
+
         {renderEditForm()}
 
         <div className="bg-white shadow-md rounded-lg overflow-hidden">
@@ -1199,24 +1199,23 @@ const Manager: React.FC<ManagerProps> = ({ templates, addTemplate, updateTemplat
           </div>
           <ul className="divide-y divide-gray-200">
             {sortedTemplates.length > 0 ? sortedTemplates.map((template, index) => (
-              <li 
-                  key={template.id.toString()} 
-                  draggable={canEdit}
-                  onDragStart={canEdit ? (e) => handleDragStart(e, template) : undefined}
-                  onDragOver={canEdit ? (e) => handleDragOver(e, index) : undefined}
-                  onDragLeave={canEdit ? handleDragLeave : undefined}
-                  onDrop={canEdit ? (e) => handleDrop(e, index) : undefined}
-                  className={`px-6 py-4 flex items-center justify-between hover:bg-gray-50 ${canEdit ? 'cursor-move' : ''} transition-colors ${
-                    dragOverIndex === index ? 'bg-green-50 border-t-2 border-green-300' : ''
+              <li
+                key={template.id.toString()}
+                draggable={canEdit}
+                onDragStart={canEdit ? (e) => handleDragStart(e, template) : undefined}
+                onDragOver={canEdit ? (e) => handleDragOver(e, index) : undefined}
+                onDragLeave={canEdit ? handleDragLeave : undefined}
+                onDrop={canEdit ? (e) => handleDrop(e, index) : undefined}
+                className={`px-6 py-4 flex items-center justify-between hover:bg-gray-50 ${canEdit ? 'cursor-move' : ''} transition-colors ${dragOverIndex === index ? 'bg-green-50 border-t-2 border-green-300' : ''
                   } ${draggedItem?.id === template.id ? 'opacity-50' : ''}`}
-                >
+              >
                 <div className="flex items-center space-x-3">
                   <span className="inline-flex items-center justify-center w-8 h-8 bg-green-100 text-green-800 text-sm font-bold rounded-full">
                     {template.order || index + 1}
                   </span>
                   <div className="flex items-center space-x-2">
                     <svg className="h-4 w-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M7 2a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H7zM6 6h8v2H6V6zm0 4h8v2H6v-2z"/>
+                      <path d="M7 2a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H7zM6 6h8v2H6V6zm0 4h8v2H6v-2z" />
                     </svg>
                     <p className="text-sm font-medium text-gray-900 truncate">{template.title}</p>
                   </div>
@@ -1238,7 +1237,7 @@ const Manager: React.FC<ManagerProps> = ({ templates, addTemplate, updateTemplat
             )}
           </ul>
         </div>
-        
+
         <ConfirmModal
           isOpen={confirmModal.isOpen}
           title={confirmModal.title}

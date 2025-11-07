@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { auth, db } from '../firebase/config';
-import { 
-  signInWithEmailAndPassword, 
-  signOut, 
-  onAuthStateChanged, 
-  User 
+import {
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
+  User
 } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 
@@ -25,8 +25,10 @@ export const useAuth = () => {
           } else {
             setProfile(null);
           }
-        } catch (e) {
-          console.warn('Erro ao buscar perfil do usuário:', e);
+        } catch (e: any) {
+          if (process.env.NODE_ENV === 'development') {
+            console.warn('Perfil do usuário indisponível no Firestore:', e?.code || e?.message || e);
+          }
           setProfile(null);
         }
       } else {
@@ -43,9 +45,9 @@ export const useAuth = () => {
       await signInWithEmailAndPassword(auth, email, password);
       return { success: true };
     } catch (error: any) {
-      return { 
-        success: false, 
-        error: error.message 
+      return {
+        success: false,
+        error: error.message
       };
     }
   };
@@ -55,9 +57,9 @@ export const useAuth = () => {
       await signOut(auth);
       return { success: true };
     } catch (error: any) {
-      return { 
-        success: false, 
-        error: error.message 
+      return {
+        success: false,
+        error: error.message
       };
     }
   };

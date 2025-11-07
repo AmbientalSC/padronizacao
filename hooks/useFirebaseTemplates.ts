@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
 import { db } from '../firebase/config';
-import { 
-  collection, 
-  doc, 
-  getDocs, 
-  addDoc, 
-  updateDoc, 
+import {
+  collection,
+  doc,
+  getDocs,
+  addDoc,
+  updateDoc,
   setDoc,
-  deleteDoc, 
-  onSnapshot 
+  deleteDoc,
+  onSnapshot
 } from 'firebase/firestore';
 import { Template } from '../types';
 import { initialTemplates } from '../data/initialData';
@@ -57,10 +57,17 @@ export const useFirebaseTemplates = (isAuthenticated: boolean) => {
       (error) => {
         // Firestore subscription failed (likely permission denied for unauthenticated users).
         // Fallback to localStorage / initialTemplates so unauthenticated users still have templates.
-        console.warn('useFirebaseTemplates: failed to subscribe to Firestore, falling back to local templates', error);
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('useFirebaseTemplates: Firestore indisponível, usando fallback local', error.code || error.message);
+        }
         const localTemplates = localStorage.getItem('atendimento-templates');
         if (localTemplates) {
-          setTemplates(JSON.parse(localTemplates));
+          try {
+            setTemplates(JSON.parse(localTemplates));
+          } catch (parseError) {
+            console.error('Erro ao recuperar templates do localStorage:', parseError);
+            setTemplates(initialTemplates);
+          }
         } else {
           setTemplates(initialTemplates);
         }
@@ -91,8 +98,8 @@ export const useFirebaseTemplates = (isAuthenticated: boolean) => {
         const cleaned = deepCleanLocal(template);
         await addDoc(templatesRef, cleaned);
       }
-    } catch (error) {
-      console.error('Erro ao criar templates iniciais:', error);
+    } catch (error: any) {
+      console.error('Erro ao criar templates iniciais:', error?.message || error);
     }
   };
 
@@ -119,12 +126,12 @@ export const useFirebaseTemplates = (isAuthenticated: boolean) => {
         const newTemplate = { ...template, id: Date.now() };
         const updatedTemplates = [...templates, newTemplate];
         setTemplates(updatedTemplates);
-  localStorage.setItem('atendimento-templates', JSON.stringify(updatedTemplates));
+        localStorage.setItem('atendimento-templates', JSON.stringify(updatedTemplates));
       }
       return { success: true };
-    } catch (error) {
-      console.error('Erro ao adicionar template:', error);
-      return { success: false, error };
+    } catch (error: any) {
+      console.error('Erro ao adicionar template:', error?.message || error);
+      return { success: false, error: error?.message || 'Erro desconhecido' };
     }
   };
 
@@ -162,16 +169,16 @@ export const useFirebaseTemplates = (isAuthenticated: boolean) => {
         }
       } else {
         // Fallback para localStorage
-        const updatedTemplates = templates.map(t => 
+        const updatedTemplates = templates.map(t =>
           t.id.toString() === templateId.toString() ? { ...t, ...updatedData } : t
         );
         setTemplates(updatedTemplates);
-  localStorage.setItem('atendimento-templates', JSON.stringify(updatedTemplates));
+        localStorage.setItem('atendimento-templates', JSON.stringify(updatedTemplates));
       }
       return { success: true };
-    } catch (error) {
-  console.error('Erro ao atualizar template:', error, { templateId, updatedData });
-      return { success: false, error };
+    } catch (error: any) {
+      console.error('Erro ao atualizar template:', error?.message || error, { templateId, updatedData: Object.keys(updatedData) });
+      return { success: false, error: error?.message || 'Erro desconhecido' };
     }
   };
 
@@ -187,9 +194,9 @@ export const useFirebaseTemplates = (isAuthenticated: boolean) => {
         localStorage.setItem('atendimento-templates', JSON.stringify(updatedTemplates));
       }
       return { success: true };
-    } catch (error) {
-      console.error('Erro ao excluir template:', error);
-      return { success: false, error };
+    } catch (error: any) {
+      console.error('Erro ao excluir template:', error?.message || error);
+      return { success: false, error: error?.message || 'Erro desconhecido' };
     }
   };
 
