@@ -102,7 +102,7 @@ const App: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center">
           <div className="flex items-center flex-none">
             <img src="https://ambiental.sc/wp-content/themes/ambiental-03/favicon.ico" alt="Logo" className="h-10 w-10 rounded-full mr-3" />
-            <h1 className="text-2xl font-bold text-gray-800">Relação com o usuário</h1>
+            <h1 className="text-2xl font-bold text-gray-800">AtendRU - Relação com o Usuário</h1>
           </div>
 
           {/* Centro do header: displayName do usuário autenticado */}
