@@ -22,17 +22,17 @@ const Generator: React.FC<GeneratorProps> = ({ templates, atendimentos, setAtend
   const [isEditingPreview, setIsEditingPreview] = useState(false);
   const [editablePreviewText, setEditablePreviewText] = useState('');
   const [cpfCnpjMode, setCpfCnpjMode] = useState<Record<string, 'cpf' | 'cnpj'>>({});
-    // Se o pai fornecer controle do FAQ, usa-o; caso contrário usa estado local
-    const [localFAQOpen, setLocalFAQOpen] = useState(false);
-    const faqOpen = typeof showFAQModal === 'boolean' ? showFAQModal : localFAQOpen;
-    const setFAQOpen = (val: boolean) => {
-      if (typeof setShowFAQModal === 'function') setShowFAQModal(val);
-      else setLocalFAQOpen(val);
-    };
+  // Se o pai fornecer controle do FAQ, usa-o; caso contrário usa estado local
+  const [localFAQOpen, setLocalFAQOpen] = useState(false);
+  const faqOpen = typeof showFAQModal === 'boolean' ? showFAQModal : localFAQOpen;
+  const setFAQOpen = (val: boolean) => {
+    if (typeof setShowFAQModal === 'function') setShowFAQModal(val);
+    else setLocalFAQOpen(val);
+  };
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   // Address autocomplete suggestions per field name
-  const [addressSuggestions, setAddressSuggestions] = useState<Record<string, Array<{display_name: string, lat: string, lon: string}>>>({});
+  const [addressSuggestions, setAddressSuggestions] = useState<Record<string, Array<{ display_name: string, lat: string, lon: string }>>>({});
   const [addressQueryTimers, setAddressQueryTimers] = useState<Record<string, any>>({});
   // Leaflet / map modal state
   const [leafletLoaded, setLeafletLoaded] = useState(false);
@@ -55,7 +55,7 @@ const Generator: React.FC<GeneratorProps> = ({ templates, atendimentos, setAtend
         ...template,
         order: template.order ?? index + 1
       }))
-      .filter(template => 
+      .filter(template =>
         template.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         template.order.toString().includes(searchTerm)
       )
@@ -89,12 +89,12 @@ const Generator: React.FC<GeneratorProps> = ({ templates, atendimentos, setAtend
   // helpers for cpf/cnpj formatting
   const onlyDigits = (s: string) => (s || '').replace(/\D/g, '');
   const formatCPF = (digits: string) => {
-    const d = digits.slice(0,11);
+    const d = digits.slice(0, 11);
     if (!d) return '';
-    const p1 = d.slice(0,3);
-    const p2 = d.slice(3,6);
-    const p3 = d.slice(6,9);
-    const p4 = d.slice(9,11);
+    const p1 = d.slice(0, 3);
+    const p2 = d.slice(3, 6);
+    const p3 = d.slice(6, 9);
+    const p4 = d.slice(9, 11);
     let out = p1;
     if (p2) out += '.' + p2;
     if (p3) out += '.' + p3;
@@ -102,13 +102,13 @@ const Generator: React.FC<GeneratorProps> = ({ templates, atendimentos, setAtend
     return out;
   };
   const formatCNPJ = (digits: string) => {
-    const d = digits.slice(0,14);
+    const d = digits.slice(0, 14);
     if (!d) return '';
-    const p1 = d.slice(0,2);
-    const p2 = d.slice(2,5);
-    const p3 = d.slice(5,8);
-    const p4 = d.slice(8,12);
-    const p5 = d.slice(12,14);
+    const p1 = d.slice(0, 2);
+    const p2 = d.slice(2, 5);
+    const p3 = d.slice(5, 8);
+    const p4 = d.slice(8, 12);
+    const p5 = d.slice(12, 14);
     let out = p1;
     if (p2) out += '.' + p2;
     if (p3) out += '.' + p3;
@@ -370,18 +370,21 @@ const Generator: React.FC<GeneratorProps> = ({ templates, atendimentos, setAtend
       }
     };
   }, [mapModal.open]);
-  
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
     const isCheckbox = type === 'checkbox';
     let finalValue = isCheckbox ? (e.target as HTMLInputElement).checked : value;
-    
+
     // Formatação especial para campos de data - converter para DD/MM/AAAA
     if ((type === 'date' || type === 'month') && value) {
       if (type === 'date') {
-        const dateObj = new Date(value);
-        if (!isNaN(dateObj.getTime())) {
-          finalValue = dateObj.toLocaleDateString('pt-BR');
+        // value vem no formato YYYY-MM-DD do input type="date"
+        const parts = value.split('-');
+        if (parts.length === 3) {
+          const [year, month, day] = parts;
+          // Formata manualmente para garantir dd/mm/yyyy
+          finalValue = `${day.padStart(2, '0')}/${month.padStart(2, '0')}/${year}`;
         }
       } else if (type === 'month') {
         // value is YYYY-MM, convert to MM/YYYY
@@ -390,8 +393,11 @@ const Generator: React.FC<GeneratorProps> = ({ templates, atendimentos, setAtend
           finalValue = `${parts[1]}/${parts[0]}`;
         }
       }
+      // Não aplicar toUpperCase em campos de data
+      setFormData(prev => ({ ...prev, [name]: finalValue }));
+      return;
     }
-    
+
     // convert strings to uppercase for consistent preview
     // EXCEPT for select fields - preserve original case from options
     if (typeof finalValue === 'string' && type !== 'select' && type !== 'select-one') {
@@ -405,7 +411,7 @@ const Generator: React.FC<GeneratorProps> = ({ templates, atendimentos, setAtend
     setFormData(prev => {
       const currentValues = Array.isArray(prev[fieldName]) ? prev[fieldName] : [];
       let newValues: string[];
-      
+
       if (checked) {
         // Add option if not already present
         newValues = currentValues.includes(option) ? currentValues : [...currentValues, option];
@@ -413,7 +419,7 @@ const Generator: React.FC<GeneratorProps> = ({ templates, atendimentos, setAtend
         // Remove option
         newValues = currentValues.filter((v: string) => v !== option);
       }
-      
+
       return { ...prev, [fieldName]: newValues };
     });
   };
@@ -426,7 +432,7 @@ const Generator: React.FC<GeneratorProps> = ({ templates, atendimentos, setAtend
     }
     // use Nominatim public API for geocoding/autocomplete
     const url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&q=${encodeURIComponent(query)}&limit=6&countrycodes=br`;
-    fetch(url, { headers: { 'Accept-Language': 'pt-BR' }})
+    fetch(url, { headers: { 'Accept-Language': 'pt-BR' } })
       .then(res => res.json())
       .then((data: any[]) => {
         const items = (data || []).map(d => {
@@ -469,10 +475,10 @@ const Generator: React.FC<GeneratorProps> = ({ templates, atendimentos, setAtend
     const digits = raw.replace(/\D/g, '');
     // aplicar formato brasileiro comum: (AA) 9XXXX-XXXX ou (AA) XXXX-XXXX
     if (digits.length <= 2) return `(${digits}`;
-    if (digits.length <= 6) return `(${digits.slice(0,2)}) ${digits.slice(2)}`;
-    if (digits.length <= 10) return `(${digits.slice(0,2)}) ${digits.slice(2,6)}-${digits.slice(6)}`;
+    if (digits.length <= 6) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+    if (digits.length <= 10) return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
     // se tiver 11 ou mais dígitos, considera DDD + 9 + resto
-    return `(${digits.slice(0,2)}) ${digits.slice(2,7)}-${digits.slice(7,11)}`;
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7, 11)}`;
   };
 
   const generatedText = useMemo(() => {
@@ -484,12 +490,12 @@ const Generator: React.FC<GeneratorProps> = ({ templates, atendimentos, setAtend
     const activeLogicBlocks = new Set<string>();
     // Track condition fields that triggered active logic (to suppress them too)
     const activeConditionFields = new Set<string>();
-    
+
     // Process template logic first
     if (selectedTemplate.template_logic) {
       // Get all normal field names to check for conflicts
       const normalFieldNames = selectedTemplate.fields.map((f: TemplateField) => f.name);
-      
+
       Object.keys(selectedTemplate.template_logic).forEach(logicKey => {
         const logicItem = selectedTemplate.template_logic![logicKey];
         const conditionField = logicItem.condition.field;
@@ -499,22 +505,22 @@ const Generator: React.FC<GeneratorProps> = ({ templates, atendimentos, setAtend
         let textToInsert = '';
         const isActive = (typeof formValue === 'boolean' && formValue === conditionValue) || (formValue == conditionValue);
         if (isActive) {
-            textToInsert = logicItem.text;
-            activeLogicBlocks.add(logicKey); // Track active logic blocks
-            activeConditionFields.add(conditionField); // Track the field that triggered this logic
+          textToInsert = logicItem.text;
+          activeLogicBlocks.add(logicKey); // Track active logic blocks
+          activeConditionFields.add(conditionField); // Track the field that triggered this logic
         }
-        
+
         // If this logic key is also a normal field name and condition is NOT active,
         // skip the replacement to let the normal field value be used instead
         const isAlsoNormalField = normalFieldNames.includes(logicKey);
         if (isAlsoNormalField && !isActive) {
           return; // Skip this replacement
         }
-        
+
         output = output.replace(new RegExp(`{{${logicKey}}}`, 'g'), textToInsert);
       });
     }
-    
+
     // Remove placeholders for injected fields that are NOT active (so they don't show as {{injetado_xxx}})
     if (selectedTemplate.template_logic) {
       // helper to normalize boolean-like values
@@ -557,7 +563,7 @@ const Generator: React.FC<GeneratorProps> = ({ templates, atendimentos, setAtend
 
       // Get all normal field names to avoid removing placeholders that are also normal fields
       const normalFieldNames = selectedTemplate.fields.map((f: TemplateField) => f.name);
-      
+
       allInjected.forEach(name => {
         if (!activeInjected.has(name)) {
           // Only remove if this is NOT also a normal field name
@@ -567,11 +573,11 @@ const Generator: React.FC<GeneratorProps> = ({ templates, atendimentos, setAtend
         }
       });
     }
-    
+
     // Process regular field placeholders
     Object.keys(formData).forEach(key => {
       const val = formData[key];
-      
+
       // If there's an active logic block with the same name as this field,
       // OR if this field triggered an active logic block,
       // suppress the field value (use empty string instead)
@@ -579,7 +585,7 @@ const Generator: React.FC<GeneratorProps> = ({ templates, atendimentos, setAtend
         output = output.replace(new RegExp(`{{${key}}}`, 'g'), '');
         return;
       }
-      
+
       // Do not insert literal 'true' or 'false' for checkbox fields — use empty string instead.
       let replacement = '';
       if (typeof val === 'boolean') {
@@ -599,13 +605,14 @@ const Generator: React.FC<GeneratorProps> = ({ templates, atendimentos, setAtend
         // console.warn(`⚠️ Placeholder {{${key}}} NÃO foi encontrado no template!`);
       }
     });
-    
+
     // console.log('✨ Output final:', output);
     return output;
   }, [formData, selectedTemplate]);
-  
+
   const handleCopyToClipboard = () => {
-    const textToCopy = isEditingPreview && editablePreviewText ? editablePreviewText : generatedText;
+    // Prioriza o texto editado se existir, senão usa o gerado
+    const textToCopy = (editablePreviewText && editablePreviewText.trim() !== '') ? editablePreviewText : generatedText;
     navigator.clipboard.writeText(textToCopy).then(() => {
       setIsCopied(true);
       setTimeout(() => setIsCopied(false), 2000);
@@ -653,14 +660,14 @@ const Generator: React.FC<GeneratorProps> = ({ templates, atendimentos, setAtend
     // Immediately update UI/local state for responsiveness
     const localAtendimento: Atendimento = { id: Date.now(), ...novoAtendimentoPartial };
     setAtendimentos(prev => [...prev, localAtendimento]);
-    
+
     // Reset form
     setSelectedTemplateId('');
     setFormData({});
     setIsCopied(false);
-  // Clear any temporary edited preview after saving the atendimento
-  setEditablePreviewText('');
-  setIsEditingPreview(false);
+    // Clear any temporary edited preview after saving the atendimento
+    setEditablePreviewText('');
+    setIsEditingPreview(false);
 
     // Show toast
     setShowSavedToast(true);
@@ -686,34 +693,34 @@ const Generator: React.FC<GeneratorProps> = ({ templates, atendimentos, setAtend
   };
 
   const renderField = useCallback((field: TemplateField) => {
-  if (field.condition) {
-    const conditionField = field.condition.field;
-    const conditionValue = field.condition.value;
-    const formValue = formData[conditionField];
-    // try to find the source field to decide how to compare
-    const sourceField = selectedTemplate?.fields.find(f => f.name === conditionField);
-    if (sourceField && sourceField.type === 'checkbox') {
-      // If condition has no explicit value, don't show the field
-      if (conditionValue == null) return null;
-      // normalize boolean-like values (accept boolean true/false or strings 'true'/'false' or localized labels)
-      const toBool = (v: any) => {
-        if (v === true || v === 1 || v === '1') return true;
-        if (v === false || v === 0 || v === '0') return false;
-        if (typeof v === 'string') {
-          const lower = v.toLowerCase();
-          if (lower === 'true' || lower === 'marcado' || lower === 'sim' || lower === 'yes') return true;
-          if (lower === 'false' || lower === 'desmarcado' || lower === 'nao' || lower === 'não' || lower === 'no') return false;
-        }
-        return Boolean(v);
-      };
-      if (toBool(formValue) !== toBool(conditionValue)) return null;
-    } else {
-      // string compare (tolerant): treat undefined/null as empty string
-      const a = formValue == null ? '' : String(formValue).trim();
-      const b = conditionValue == null ? '' : String(conditionValue).trim();
-      if (a !== b) return null;
+    if (field.condition) {
+      const conditionField = field.condition.field;
+      const conditionValue = field.condition.value;
+      const formValue = formData[conditionField];
+      // try to find the source field to decide how to compare
+      const sourceField = selectedTemplate?.fields.find(f => f.name === conditionField);
+      if (sourceField && sourceField.type === 'checkbox') {
+        // If condition has no explicit value, don't show the field
+        if (conditionValue == null) return null;
+        // normalize boolean-like values (accept boolean true/false or strings 'true'/'false' or localized labels)
+        const toBool = (v: any) => {
+          if (v === true || v === 1 || v === '1') return true;
+          if (v === false || v === 0 || v === '0') return false;
+          if (typeof v === 'string') {
+            const lower = v.toLowerCase();
+            if (lower === 'true' || lower === 'marcado' || lower === 'sim' || lower === 'yes') return true;
+            if (lower === 'false' || lower === 'desmarcado' || lower === 'nao' || lower === 'não' || lower === 'no') return false;
+          }
+          return Boolean(v);
+        };
+        if (toBool(formValue) !== toBool(conditionValue)) return null;
+      } else {
+        // string compare (tolerant): treat undefined/null as empty string
+        const a = formValue == null ? '' : String(formValue).trim();
+        const b = conditionValue == null ? '' : String(conditionValue).trim();
+        if (a !== b) return null;
+      }
     }
-  }
 
     const commonProps = {
       name: field.name,
@@ -730,8 +737,8 @@ const Generator: React.FC<GeneratorProps> = ({ templates, atendimentos, setAtend
         ) : (
           <label htmlFor={field.name} className="block text-sm font-medium text-gray-700">{field.label}</label>
         )}
-  {field.type === 'textarea' && <textarea {...commonProps} value={formData[field.name] || ''} rows={3}></textarea>}
-  {field.type === 'aviso' && null}
+        {field.type === 'textarea' && <textarea {...commonProps} value={formData[field.name] || ''} rows={3}></textarea>}
+        {field.type === 'aviso' && null}
         {field.type === 'select' && (
           <select {...commonProps} value={formData[field.name] || ''}>
             <option value="">Selecione...</option>
@@ -898,7 +905,7 @@ const Generator: React.FC<GeneratorProps> = ({ templates, atendimentos, setAtend
                 <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9l-4.95 4.95a1 1 0 01-1.414 0L3.636 13.95a7 7 0 011.414-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
               </svg>
             </button>
-              {addressSuggestions[field.name] && addressSuggestions[field.name].length > 0 && (
+            {addressSuggestions[field.name] && addressSuggestions[field.name].length > 0 && (
               <ul className="address-suggestion absolute z-20 left-0 right-0 top-full mt-1 bg-white border rounded max-h-48 overflow-auto text-sm">
                 {addressSuggestions[field.name].map((s: any, i) => (
                   <li key={i} className="px-3 py-2 hover:bg-gray-100 cursor-pointer" onClick={() => {
@@ -944,7 +951,7 @@ const Generator: React.FC<GeneratorProps> = ({ templates, atendimentos, setAtend
               }}
             />
           </div>
-  )}
+        )}
       </div>
     );
   }, [formData, handleInputChange]);
@@ -1011,9 +1018,8 @@ const Generator: React.FC<GeneratorProps> = ({ templates, atendimentos, setAtend
                     filteredAndSortedTemplates.map(template => (
                       <div
                         key={template.id.toString()}
-                        className={`cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-green-50 ${
-                          selectedTemplateId === template.id.toString() ? 'bg-green-100 text-green-900' : 'text-gray-900'
-                        }`}
+                        className={`cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-green-50 ${selectedTemplateId === template.id.toString() ? 'bg-green-100 text-green-900' : 'text-gray-900'
+                          }`}
                         onClick={() => {
                           setSelectedTemplateId(template.id.toString());
                           setSearchTerm('');
