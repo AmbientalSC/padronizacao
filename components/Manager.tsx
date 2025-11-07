@@ -884,6 +884,7 @@ const Manager: React.FC<ManagerProps> = ({ templates, addTemplate, updateTemplat
                                 <option value="telefone">Telefone</option>
                                 <option value="cpfcnpj">CPF/CNPJ</option>
                                 <option value="endereco">Endereço</option>
+                                <option value="hyperlink">Hyperlink (Link)</option>
                               </select>
                               {field.type === 'date' && (
                                 <div className="mt-2">
@@ -907,6 +908,19 @@ const Manager: React.FC<ManagerProps> = ({ templates, addTemplate, updateTemplat
                                     <option value="2">2 casas decimais (fixo)</option>
                                   </select>
                                   <p className="text-xs text-gray-500 mt-1">Escolha se este campo deve armazenar um valor com casas decimais fixas.</p>
+                                </div>
+                              )}
+                              {field.type === 'hyperlink' && (
+                                <div className="mt-2">
+                                  <label className="block text-xs font-medium text-gray-600">URL do Link</label>
+                                  <input
+                                    type="url"
+                                    value={field.url || ''}
+                                    onChange={e => handleFieldChange(index, { url: e.target.value })}
+                                    placeholder="https://exemplo.com"
+                                    className="mt-1 block w-full px-2 py-1 text-sm border border-gray-300 rounded-md"
+                                  />
+                                  <p className="text-xs text-gray-500 mt-1">O label será o texto do link clicável.</p>
                                 </div>
                               )}
                             </div>

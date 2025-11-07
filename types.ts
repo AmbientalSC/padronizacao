@@ -7,17 +7,19 @@ export interface FieldCondition {
 export interface TemplateField {
   name: string;
   label: string;
-  type: 'text' | 'number' | 'date' | 'email' | 'textarea' | 'select' | 'checkbox' | 'telefone' | 'cpfcnpj' | 'endereco' | 'multiselect' | 'aviso';
+  type: 'text' | 'number' | 'date' | 'email' | 'textarea' | 'select' | 'checkbox' | 'telefone' | 'cpfcnpj' | 'endereco' | 'multiselect' | 'aviso' | 'hyperlink';
   // 'aviso' is a non-interactive label displayed in the dynamic form
   // it does not render an input — only shows the label as informational text.
-  // Add it to the allowed types.
-  // NOTE: Update code that switches on field.type to handle 'aviso'.
+  // 'hyperlink' displays a clickable link with label and URL
+  // NOTE: Update code that switches on field.type to handle 'aviso' and 'hyperlink'.
   options?: string[]; // for select and multiselect
   condition?: FieldCondition;
   // If type === 'date', optional format selector
   dateFormat?: 'dd/mm/yyyy' | 'mm/yyyy';
   // If type === 'number', optional decimals setting (e.g. 2 for fixed two decimals)
   numberDecimals?: number | null;
+  // If type === 'hyperlink', the URL to link to
+  url?: string;
 }
 
 export interface TemplateLogicItem {
