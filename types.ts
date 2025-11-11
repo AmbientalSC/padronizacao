@@ -38,6 +38,8 @@ export interface Template {
   // Notas e FAQ para este modelo (opcionais)
   notes?: string;
   faq?: string;
+  // Se false, o modelo está desativado e não deve ser usado por usuários comuns
+  active?: boolean;
   // Ordem de exibição do modelo (usado para enumeração)
   order?: number;
 }

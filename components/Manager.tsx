@@ -14,8 +14,11 @@ const emptyTemplate: Omit<Template, 'id'> = {
   title: '',
   template: '',
   fields: [],
-  template_logic: {}
+  template_logic: {},
+  active: true
 };
+
+
 
 const Manager: React.FC<ManagerProps> = ({ templates, addTemplate, updateTemplate, deleteTemplate, isManager = false }) => {
   const canEdit = !!isManager;
@@ -69,8 +72,20 @@ const Manager: React.FC<ManagerProps> = ({ templates, addTemplate, updateTemplat
       ...emptyTemplate,
       id: -Date.now(),
       template_logic: {},
-      order: nextOrder
+      order: nextOrder,
+      active: true
     });
+  };
+
+  const handleToggleActive = async (template: Template) => {
+    try {
+      const newVal = !(template.active === true);
+      // Optimistic UI not necessary here — updateTemplate will refresh via subscription
+      await updateTemplate(template.id, { active: newVal });
+    } catch (e) {
+      console.error('Erro ao alternar estado active do template', e);
+      alert('Não foi possível alterar o estado do modelo. Tente novamente.');
+    }
   };
 
   const handleSelectForEdit = (template: Template) => {
@@ -837,6 +852,15 @@ const Manager: React.FC<ManagerProps> = ({ templates, addTemplate, updateTemplat
                   {validationState.fieldErrors['title'] && (
                     <p className="text-xs text-red-600 mt-1">{validationState.fieldErrors['title'].join('; ')}</p>
                   )}
+                  {canEdit && (
+                    <div className="mt-2 flex items-center space-x-2">
+                      <label className="flex items-center text-sm">
+                        <input type="checkbox" checked={!!editingTemplate.active} onChange={e => setEditingTemplate(prev => prev ? { ...prev, active: e.target.checked } : null)} className="mr-2" />
+                        <span className="text-sm">Ativo</span>
+                      </label>
+                      {!editingTemplate.active && <span className="text-xs text-red-600">Desativado — usuários não poderão utilizar este modelo</span>}
+                    </div>
+                  )}
                 </div>
 
                 {/* FIX: Wrapped string with `{{...}}` in a JSX expression to prevent parsing errors. */}
@@ -1231,12 +1255,16 @@ const Manager: React.FC<ManagerProps> = ({ templates, addTemplate, updateTemplat
                     <svg className="h-4 w-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
                       <path d="M7 2a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H7zM6 6h8v2H6V6zm0 4h8v2H6v-2z" />
                     </svg>
-                    <p className="text-sm font-medium text-gray-900 truncate">{template.title}</p>
+                    <div>
+                      <p className={`text-sm font-medium ${template.active === false ? 'text-gray-400 line-through' : 'text-gray-900'} truncate`}>{template.title}</p>
+                      {template.active === false && <p className="text-xs text-red-600">Desativado</p>}
+                    </div>
                   </div>
                 </div>
-                <div className="flex-shrink-0 ml-4 space-x-2">
+                <div className="flex-shrink-0 ml-4 space-x-2 flex items-center">
                   {canEdit ? (
                     <>
+                      <button onClick={() => handleToggleActive(template)} className={`px-2 py-1 text-xs rounded ${template.active === false ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}`}>{template.active === false ? 'Ativar' : 'Desativar'}</button>
                       <button onClick={() => handleSelectForEdit(template)} className="text-green-600 hover:text-green-900 text-sm font-medium">Editar</button>
                       <button onClick={() => handleClone(template)} className="text-blue-600 hover:text-blue-900 text-sm font-medium">Clonar</button>
                       <button onClick={() => handleDelete(template.id)} className="text-red-600 hover:text-red-900 text-sm font-medium">Excluir</button>

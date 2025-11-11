@@ -47,7 +47,7 @@ const Generator: React.FC<GeneratorProps> = ({ templates, atendimentos, setAtend
   }, [selectedTemplateId, templates]);
 
   // current authenticated user (used to persist atendimentos per-user)
-  const { user } = useAuth() as any;
+  const { user, isManager } = useAuth() as any;
   // Templates filtrados e ordenados
   const filteredAndSortedTemplates = useMemo(() => {
     return templates
@@ -56,8 +56,10 @@ const Generator: React.FC<GeneratorProps> = ({ templates, atendimentos, setAtend
         order: template.order ?? index + 1
       }))
       .filter(template =>
-        template.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        template.order.toString().includes(searchTerm)
+        // If the user is not a manager, hide templates explicitly marked as inactive (active === false)
+        (isManager ? true : template.active !== false) &&
+        (template.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        template.order.toString().includes(searchTerm))
       )
       .sort((a, b) => (a.order || 0) - (b.order || 0));
   }, [templates, searchTerm]);
