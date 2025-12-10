@@ -130,7 +130,7 @@ const App: React.FC = () => {
                 >
                   Assessorias
                 </button>
-                <TabButton tab="atendimentos">Historico</TabButton>
+                <TabButton tab="atendimentos">Histórico</TabButton>
                 <TabButton tab="manager" onClick={handleManagerTabClick}>
                   Gerenciar Modelos
                   {isAuthenticated && <span className="ml-1 text-xs">🔓</span>}
