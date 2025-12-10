@@ -853,7 +853,7 @@ const Manager: React.FC<ManagerProps> = ({ templates, addTemplate, updateTemplat
                     <p className="text-xs text-red-600 mt-1">{validationState.fieldErrors['title'].join('; ')}</p>
                   )}
                   {canEdit && (
-                    <div className="mt-2 flex items-center space-x-2">
+                    <div className="mt-2 flex items-center space-x-4">
                       <label className="flex items-center text-sm">
                         <input type="checkbox" checked={!!editingTemplate.active} onChange={e => setEditingTemplate(prev => prev ? { ...prev, active: e.target.checked } : null)} className="mr-2" />
                         <span className="text-sm">Ativo</span>
@@ -861,6 +861,38 @@ const Manager: React.FC<ManagerProps> = ({ templates, addTemplate, updateTemplat
                       {!editingTemplate.active && <span className="text-xs text-red-600">Desativado — usuários não poderão utilizar este modelo</span>}
                     </div>
                   )}
+                  <div className="mt-3">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Categorias (selecione em quais guias o modelo aparecerá)</label>
+                    <div className="space-y-2 p-3 bg-gray-50 border border-gray-300 rounded-md">
+                      {(['atendimento', 'assessoria', 'chamado'] as const).map(cat => {
+                        const isChecked = (editingTemplate.categories || ['atendimento']).includes(cat);
+                        return (
+                          <label key={cat} className="flex items-center space-x-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={e => {
+                                const current = editingTemplate.categories || ['atendimento'];
+                                let updated: Array<'atendimento' | 'assessoria' | 'chamado'>;
+                                if (e.target.checked) {
+                                  updated = [...current, cat];
+                                } else {
+                                  updated = current.filter(c => c !== cat);
+                                }
+                                // Garante que pelo menos uma categoria esteja selecionada
+                                if (updated.length === 0) updated = ['atendimento'];
+                                setEditingTemplate(prev => prev ? { ...prev, categories: updated } : null);
+                              }}
+                              disabled={!canEdit}
+                              className="h-4 w-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                            />
+                            <span className="text-sm capitalize">{cat === 'chamado' ? 'Chamados' : cat}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">O modelo aparecerá em todas as guias selecionadas</p>
+                  </div>
                 </div>
 
                 {/* FIX: Wrapped string with `{{...}}` in a JSX expression to prevent parsing errors. */}

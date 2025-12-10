@@ -15,7 +15,7 @@ import ConfirmModal from './components/ConfirmModal';
 import ChangePasswordModal from './components/ChangePasswordModal';
 import { initialTemplates } from './data/initialData';
 
-type Tab = 'generator' | 'manager' | 'atendimentos';
+type Tab = 'generator' | 'assessorias' | 'chamado' | 'manager' | 'atendimentos';
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<Tab>('generator');
@@ -99,56 +99,79 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
       <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center">
-          <div className="flex items-center flex-none">
-            <img src="https://ambiental.sc/wp-content/themes/ambiental-03/favicon.ico" alt="Logo" className="h-10 w-10 rounded-full mr-3" />
-            <h1 className="text-2xl font-bold text-gray-800">AtendRU - Relação com o Usuário</h1>
-          </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center flex-none">
+              <img src="https://ambiental.sc/wp-content/themes/ambiental-03/favicon.ico" alt="Logo" className="h-10 w-10 rounded-full mr-3" />
+              <h1 className="text-2xl font-bold text-gray-800">AtendRU - Relação com usuário</h1>
+            </div>
 
-          {/* Centro do header: displayName do usuário autenticado */}
-          <div className="flex-1 text-center">
-            {isAuthenticated ? (
-              <div className="text-sm text-gray-700">{profile?.displayName || user?.displayName || user?.email}</div>
-            ) : null}
-          </div>
+            <div className="flex items-center space-x-4 flex-none">
+              <nav className="flex space-x-2 bg-gray-100 p-1 rounded-lg items-center">
+                <TabButton tab="generator">Atendimento</TabButton>
 
-          <div className="flex items-center space-x-4 flex-none">
-            <nav className="flex space-x-2 bg-gray-100 p-1 rounded-lg items-center">
-              <TabButton tab="generator">Gerador</TabButton>
-              <TabButton tab="atendimentos">Atendimentos</TabButton>
-              <TabButton tab="manager" onClick={handleManagerTabClick}>
-                Gerenciar Modelos
-                {isAuthenticated && <span className="ml-1 text-xs">🔓</span>}
-              </TabButton>
-            </nav>
-            {/* FAQ button removed — use ícone de informação no gerador quando necessário */}
-            {isAuthenticated ? (
-              <div className="flex items-center space-x-3">
-                {isManager && (
-                  <button title="Gerenciar usuários" onClick={() => setShowUserMgmt(true)} className="text-gray-600 hover:text-gray-800" aria-label="Gerenciar usuários">
-                    {/* Usar SVG estático em /public para inclusão no build */}
-                    <img src={`${(import.meta as any).env.BASE_URL}engrenagem.svg`} alt="Gerenciar usuários" className="h-6 w-6" />
+                <button
+                  onClick={() => setActiveTab('chamado')}
+                  className={`px-4 py-2 text-sm font-medium rounded-md transition-colors duration-200 ${
+                    activeTab === 'chamado'
+                      ? 'bg-yellow-400 text-gray-900 shadow'
+                      : 'text-gray-600 hover:bg-yellow-100'
+                  }`}
+                >
+                  Chamados
+                </button>
+                <button
+                  onClick={() => setActiveTab('assessorias')}
+                  className={`px-4 py-2 text-sm font-medium rounded-md transition-colors duration-200 ${
+                    activeTab === 'assessorias'
+                      ? 'bg-blue-600 text-white shadow'
+                      : 'text-gray-600 hover:bg-blue-100'
+                  }`}
+                >
+                  Assessorias
+                </button>
+                <TabButton tab="atendimentos">Historico</TabButton>
+                <TabButton tab="manager" onClick={handleManagerTabClick}>
+                  Gerenciar Modelos
+                  {isAuthenticated && <span className="ml-1 text-xs">🔓</span>}
+                </TabButton>
+              </nav>
+              {/* FAQ button removed — use ícone de informação no gerador quando necessário */}
+              {isAuthenticated ? (
+                <div className="flex items-center space-x-3">
+                  {isManager && (
+                    <button title="Gerenciar usuários" onClick={() => setShowUserMgmt(true)} className="text-gray-600 hover:text-gray-800" aria-label="Gerenciar usuários">
+                      {/* Usar SVG estático em /public para inclusão no build */}
+                      <img src={`${(import.meta as any).env.BASE_URL}engrenagem.svg`} alt="Gerenciar usuários" className="h-6 w-6" />
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setShowLogoutConfirm(true)}
+                    className="px-4 py-2 text-sm font-medium rounded-md transition-colors duration-200 text-gray-600 hover:bg-red-100 hover:text-red-700"
+                  >
+                    Sair
                   </button>
-                )}
-                <button
-                  onClick={() => setShowLogoutConfirm(true)}
-                  className="px-4 py-2 text-sm font-medium rounded-md transition-colors duration-200 text-gray-600 hover:bg-red-100 hover:text-red-700"
-                >
-                  Sair
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center">
-                <button
-                  onClick={() => setShowLoginModal(true)}
-                  className="px-4 py-2 text-sm font-medium rounded-md transition-colors duration-200 text-gray-600 hover:bg-green-100"
-                >
-                  Login
-                </button>
-              </div>
-            )}
-            <UserManagementModal isOpen={!!(isManager && showUserMgmt)} onClose={() => setShowUserMgmt(false)} />
+                </div>
+              ) : (
+                <div className="flex items-center">
+                  <button
+                    onClick={() => setShowLoginModal(true)}
+                    className="px-4 py-2 text-sm font-medium rounded-md transition-colors duration-200 text-gray-600 hover:bg-green-100"
+                  >
+                    Login
+                  </button>
+                </div>
+              )}
+              <UserManagementModal isOpen={!!(isManager && showUserMgmt)} onClose={() => setShowUserMgmt(false)} />
+            </div>
           </div>
+
+          {/* Nome do usuário abaixo do header principal */}
+          {isAuthenticated && (
+            <div className="mt-2 text-center">
+              <div className="text-sm text-gray-600">Usuário: <span className="font-medium text-gray-800">{profile?.displayName || user?.displayName || user?.email}</span></div>
+            </div>
+          )}
         </div>
       </header>
       <main>
@@ -159,6 +182,27 @@ const App: React.FC = () => {
             setAtendimentos={setAtendimentos}
             showFAQModal={showFAQModal}
             setShowFAQModal={setShowFAQModal}
+            category="atendimento"
+          />
+        )}
+        {activeTab === 'assessorias' && (
+          <Generator
+            templates={templates}
+            atendimentos={atendimentos}
+            setAtendimentos={setAtendimentos}
+            showFAQModal={showFAQModal}
+            setShowFAQModal={setShowFAQModal}
+            category="assessoria"
+          />
+        )}
+        {activeTab === 'chamado' && (
+          <Generator
+            templates={templates}
+            atendimentos={atendimentos}
+            setAtendimentos={setAtendimentos}
+            showFAQModal={showFAQModal}
+            setShowFAQModal={setShowFAQModal}
+            category="chamado"
           />
         )}
         {activeTab === 'atendimentos' && <Atendimentos atendimentos={atendimentos} setAtendimentos={setAtendimentos} templates={templates} />}

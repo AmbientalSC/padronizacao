@@ -12,9 +12,17 @@ interface GeneratorProps {
   setAtendimentos: React.Dispatch<React.SetStateAction<Atendimento[]>>;
   showFAQModal?: boolean;
   setShowFAQModal?: (val: boolean) => void;
+  category?: 'atendimento' | 'assessoria' | 'chamado';
 }
 
-const Generator: React.FC<GeneratorProps> = ({ templates, atendimentos, setAtendimentos, showFAQModal, setShowFAQModal }) => {
+const Generator: React.FC<GeneratorProps> = ({ templates, atendimentos, setAtendimentos, showFAQModal, setShowFAQModal, category = 'atendimento' }) => {
+  // Filtrar templates pela categoria
+  const filteredTemplates = useMemo(() => {
+    return templates.filter(t => {
+      const cats = t.categories || ['atendimento'];
+      return cats.includes(category);
+    });
+  }, [templates, category]);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
   const [formData, setFormData] = useState<{ [key: string]: any }>({});
   const [isCopied, setIsCopied] = useState(false);
@@ -43,14 +51,14 @@ const Generator: React.FC<GeneratorProps> = ({ templates, atendimentos, setAtend
 
   const selectedTemplate = useMemo(() => {
     if (!selectedTemplateId) return null;
-    return templates.find(t => t.id.toString() === selectedTemplateId) || null;
-  }, [selectedTemplateId, templates]);
+    return filteredTemplates.find(t => t.id.toString() === selectedTemplateId) || null;
+  }, [selectedTemplateId, filteredTemplates]);
 
   // current authenticated user (used to persist atendimentos per-user)
   const { user, isManager } = useAuth() as any;
   // Templates filtrados e ordenados
   const filteredAndSortedTemplates = useMemo(() => {
-    return templates
+    return filteredTemplates
       .map((template, index) => ({
         ...template,
         order: template.order ?? index + 1
@@ -62,7 +70,7 @@ const Generator: React.FC<GeneratorProps> = ({ templates, atendimentos, setAtend
         template.order.toString().includes(searchTerm))
       )
       .sort((a, b) => (a.order || 0) - (b.order || 0));
-  }, [templates, searchTerm]);
+  }, [filteredTemplates, searchTerm, isManager]);
 
   useEffect(() => {
     const defaultFormData: { [key: string]: any } = {};

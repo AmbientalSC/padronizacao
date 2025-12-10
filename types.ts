@@ -42,6 +42,8 @@ export interface Template {
   active?: boolean;
   // Ordem de exibição do modelo (usado para enumeração)
   order?: number;
+  // Categorias do modelo: array para permitir que apareça em múltiplas guias
+  categories?: Array<'atendimento' | 'assessoria' | 'chamado'>;
 }
 
 export interface Atendimento {
