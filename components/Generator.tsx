@@ -26,6 +26,7 @@ const Generator: React.FC<GeneratorProps> = ({ templates, atendimentos, setAtend
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
   const [formData, setFormData] = useState<{ [key: string]: any }>({});
   const [isCopied, setIsCopied] = useState(false);
+  const [isPersisted, setIsPersisted] = useState(false);
   const [showSavedToast, setShowSavedToast] = useState(false);
   const [isEditingPreview, setIsEditingPreview] = useState(false);
   const [editablePreviewText, setEditablePreviewText] = useState('');
@@ -72,18 +73,48 @@ const Generator: React.FC<GeneratorProps> = ({ templates, atendimentos, setAtend
       .sort((a, b) => (a.order || 0) - (b.order || 0));
   }, [filteredTemplates, searchTerm, isManager]);
 
+  // Manual persistence handler
+  const handleSaveForNext = () => {
+    const saved = localStorage.getItem('atendimento_field_values');
+    let persistence = saved ? JSON.parse(saved) : {};
+
+    Object.entries(formData).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && String(value).trim() !== '') {
+         persistence[key.toLowerCase()] = value;
+      }
+    });
+
+    localStorage.setItem('atendimento_field_values', JSON.stringify(persistence));
+    setIsPersisted(true);
+    setTimeout(() => setIsPersisted(false), 2000);
+  };
+
   useEffect(() => {
     const defaultFormData: { [key: string]: any } = {};
     const initialModes: Record<string, 'cpf' | 'cnpj'> = {};
+    
+    // Load persisted values
+    const saved = localStorage.getItem('atendimento_field_values');
+    const persistence = saved ? JSON.parse(saved) : {};
+
     if (selectedTemplate) {
       selectedTemplate.fields.forEach(field => {
-        if (field.type === 'checkbox') {
-          defaultFormData[field.name] = false;
-        } else if (field.type === 'multiselect') {
-          defaultFormData[field.name] = [];
+        const lowerName = field.name.toLowerCase();
+        
+        // Check persistence first (case-insensitive match)
+        if (persistence[lowerName] !== undefined) {
+             defaultFormData[field.name] = persistence[lowerName];
         } else {
-          defaultFormData[field.name] = '';
+            // Fallback to defaults
+            if (field.type === 'checkbox') {
+              defaultFormData[field.name] = false;
+            } else if (field.type === 'multiselect') {
+              defaultFormData[field.name] = [];
+            } else {
+              defaultFormData[field.name] = '';
+            }
         }
+
         if (field.type === 'cpfcnpj') {
           // default mode is cpf
           initialModes[field.name] = 'cpf';
@@ -592,7 +623,7 @@ const Generator: React.FC<GeneratorProps> = ({ templates, atendimentos, setAtend
       // OR if this field triggered an active logic block,
       // suppress the field value (use empty string instead)
       if (activeLogicBlocks.has(key) || activeConditionFields.has(key)) {
-        output = output.replace(new RegExp(`{{${key}}}`, 'g'), '');
+        output = output.replace(new RegExp(`{{${key}}}`, 'gi'), '');
         return;
       }
 
@@ -610,7 +641,7 @@ const Generator: React.FC<GeneratorProps> = ({ templates, atendimentos, setAtend
       }
       // console.log(`🔄 Substituindo "{{${key}}}" por "${replacement}"`);
       const before = output;
-      output = output.replace(new RegExp(`{{${key}}}`, 'g'), replacement);
+      output = output.replace(new RegExp(`{{${key}}}`, 'gi'), replacement);
       if (before === output && replacement) {
         // console.warn(`⚠️ Placeholder {{${key}}} NÃO foi encontrado no template!`);
       }
@@ -670,6 +701,20 @@ const Generator: React.FC<GeneratorProps> = ({ templates, atendimentos, setAtend
     // Immediately update UI/local state for responsiveness
     const localAtendimento: Atendimento = { id: Date.now(), ...novoAtendimentoPartial };
     setAtendimentos(prev => [...prev, localAtendimento]);
+
+    // Force persist current values before resetting to ensure they are saved
+    try {
+      const saved = localStorage.getItem('atendimento_field_values');
+      let persistence = saved ? JSON.parse(saved) : {};
+      Object.entries(formData).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+           persistence[key.toLowerCase()] = value;
+        }
+      });
+      localStorage.setItem('atendimento_field_values', JSON.stringify(persistence));
+    } catch (e) {
+      console.error('Erro ao persistir valores', e);
+    }
 
     // Reset form
     setSelectedTemplateId('');
@@ -1120,6 +1165,23 @@ const Generator: React.FC<GeneratorProps> = ({ templates, atendimentos, setAtend
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-xl font-semibold text-gray-800">Preview em Tempo Real</h2>
                   <div className="flex items-center space-x-2">
+                    <button
+                      onClick={handleSaveForNext}
+                      className="flex items-center justify-center px-3 py-1.5 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-150"
+                      title="Salvar campos atuais para preenchimento automático no próximo modelo"
+                    >
+                      {isPersisted ? (
+                        <>
+                          <svg className="h-5 w-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                          Salvo!
+                        </>
+                      ) : (
+                        <>
+                          <svg className="h-5 w-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" /></svg>
+                          Salvar p/ Próximo
+                        </>
+                      )}
+                    </button>
                     <button
                       onClick={() => {
                         if (!isEditingPreview) {
