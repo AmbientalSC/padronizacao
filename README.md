@@ -38,18 +38,12 @@ Uma ferramenta interna de produtividade para padronizar os textos de registro de
    npm install
    ```
 
-3. Configure as variáveis de ambiente:
-   ```bash
-   # Crie um arquivo .env.local
-   GEMINI_API_KEY=sua_chave_api_aqui
-   ```
-
-4. Execute o projeto:
+3. Execute o projeto:
    ```bash
    npm run dev
    ```
 
-5. Acesse: `http://localhost:5173`
+4. Acesse: `http://localhost:5173`
 
 ## 🚀 Deploy
 
@@ -64,26 +58,8 @@ O projeto está configurado com GitHub Actions para deploy automático:
 - Push na branch `main` → Deploy automático
 - URL: https://ambientalsc.github.io/padronizacao
 
-## 🔧 Configuração do Firebase
-
-1. Crie um projeto no [Firebase Console](https://console.firebase.google.com)
-2. Ative Authentication (Email/Password)
-3. Ative Firestore Database
-4. Configure as regras de segurança do Firestore:
-
-```javascript
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /templates/{document} {
-      allow read: if true;
-      allow write: if request.auth != null;
-    }
-  }
-}
 ```
 
-5. Adicione a configuração no arquivo `firebase/config.ts`
 
 ## 👥 Como Usar
 
@@ -122,11 +98,3 @@ src/
 - Regras de segurança do Firestore
 - Armazenamento local para dados pessoais
 - Validação de formulários
-
-## 📝 Licença
-
-© 2025 Ambiental Limpeza Urbana e Saneamento LTDA. Todos os direitos reservados.
-
----
-
-**URL de Produção**: https://ambientalsc.github.io/padronizacao
