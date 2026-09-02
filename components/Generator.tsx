@@ -1201,7 +1201,18 @@ const Generator: React.FC<GeneratorProps> = ({ templates, atendimentos, setAtend
                 <textarea
                   readOnly={!isEditingPreview}
                   value={currentPreviewText}
-                  onChange={(e) => { if (isEditingPreview) setEditablePreviewText(e.target.value.toUpperCase()); }}
+                  onChange={(e) => {
+                    if (!isEditingPreview) return;
+                    const el = e.target;
+                    const { selectionStart, selectionEnd } = el;
+                    const upper = el.value.toUpperCase();
+                    // Update the DOM value/caret in place first so React's reconciliation
+                    // sees no diff on re-render and doesn't reset the cursor to the end.
+                    el.value = upper;
+                    el.selectionStart = selectionStart;
+                    el.selectionEnd = selectionEnd;
+                    setEditablePreviewText(upper);
+                  }}
                   className={`w-full min-h-[18rem] p-3 ${isEditingPreview ? 'bg-white' : 'bg-gray-50'} border border-gray-300 rounded-md shadow-inner text-sm font-mono`}
                   placeholder="O texto gerado aparecerá aqui..."
                 />
