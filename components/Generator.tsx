@@ -93,9 +93,14 @@ const Generator: React.FC<GeneratorProps> = ({ templates, atendimentos, setAtend
     const defaultFormData: { [key: string]: any } = {};
     const initialModes: Record<string, 'cpf' | 'cnpj'> = {};
     
-    // Load persisted values
+    // Load persisted values (only set explicitly via "Salvar p/ Próximo")
     const saved = localStorage.getItem('atendimento_field_values');
     const persistence = saved ? JSON.parse(saved) : {};
+    // Consume the persisted values once, so they only carry over to this next
+    // atendimento and don't keep leaking into every subsequent one.
+    if (saved) {
+      localStorage.removeItem('atendimento_field_values');
+    }
 
     if (selectedTemplate) {
       selectedTemplate.fields.forEach(field => {
@@ -440,8 +445,8 @@ const Generator: React.FC<GeneratorProps> = ({ templates, atendimentos, setAtend
     }
 
     // convert strings to uppercase for consistent preview
-    // EXCEPT for select fields - preserve original case from options
-    if (typeof finalValue === 'string' && type !== 'select' && type !== 'select-one') {
+    // EXCEPT for select fields (preserve original case from options) and email fields (must stay lowercase)
+    if (typeof finalValue === 'string' && type !== 'select' && type !== 'select-one' && type !== 'email') {
       finalValue = finalValue.toUpperCase();
     }
     setFormData(prev => ({ ...prev, [name]: finalValue }));
@@ -701,20 +706,6 @@ const Generator: React.FC<GeneratorProps> = ({ templates, atendimentos, setAtend
     // Immediately update UI/local state for responsiveness
     const localAtendimento: Atendimento = { id: Date.now(), ...novoAtendimentoPartial };
     setAtendimentos(prev => [...prev, localAtendimento]);
-
-    // Force persist current values before resetting to ensure they are saved
-    try {
-      const saved = localStorage.getItem('atendimento_field_values');
-      let persistence = saved ? JSON.parse(saved) : {};
-      Object.entries(formData).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
-           persistence[key.toLowerCase()] = value;
-        }
-      });
-      localStorage.setItem('atendimento_field_values', JSON.stringify(persistence));
-    } catch (e) {
-      console.error('Erro ao persistir valores', e);
-    }
 
     // Reset form
     setSelectedTemplateId('');
@@ -1210,7 +1201,7 @@ const Generator: React.FC<GeneratorProps> = ({ templates, atendimentos, setAtend
                 <textarea
                   readOnly={!isEditingPreview}
                   value={currentPreviewText}
-                  onChange={(e) => { if (isEditingPreview) setEditablePreviewText(e.target.value); }}
+                  onChange={(e) => { if (isEditingPreview) setEditablePreviewText(e.target.value.toUpperCase()); }}
                   className={`w-full min-h-[18rem] p-3 ${isEditingPreview ? 'bg-white' : 'bg-gray-50'} border border-gray-300 rounded-md shadow-inner text-sm font-mono`}
                   placeholder="O texto gerado aparecerá aqui..."
                 />
